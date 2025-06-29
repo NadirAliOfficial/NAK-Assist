@@ -18,4 +18,4 @@ Open in Android Studio and run on device or emulator (API 26+).
 
 ## License
 MIT
-<!-- updated: 2025-01-07-r01 -->
+<!-- updated: 2025-06-29-r01 -->
