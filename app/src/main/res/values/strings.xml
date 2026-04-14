@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">NAK Assist</string>
+    <string name="accessibility_description">Team NAK AI Assistant — reads screen and generates smart responses</string>
+</resources>
