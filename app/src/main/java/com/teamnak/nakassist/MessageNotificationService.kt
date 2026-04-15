@@ -15,8 +15,13 @@ class MessageNotificationService : NotificationListenerService() {
             "com.fiverr.fiverr",
             "com.fiverr.android"
         )
+        private var lastAwayReplyTime = 0L
+        private const val AWAY_REPLY_COOLDOWN_MS = 30_000L // 30s between auto-replies
 
         fun sendAwayReply(service: AssistAccessibilityService, screenText: String) {
+            val now = System.currentTimeMillis()
+            if (now - lastAwayReplyTime < AWAY_REPLY_COOLDOWN_MS) return
+            lastAwayReplyTime = now
             val lastMsg = screenText.lines().lastOrNull { it.isNotBlank() } ?: return
             GroqApiHelper.ask(
                 systemPrompt = "You are a professional Fiverr SELLER. Write a brief, friendly holding reply (1–2 sentences) to acknowledge you received the buyer's message and will get back to them soon. Output ONLY the reply text.",

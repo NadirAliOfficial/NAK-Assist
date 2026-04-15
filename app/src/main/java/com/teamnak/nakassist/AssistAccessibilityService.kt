@@ -42,9 +42,6 @@ class AssistAccessibilityService : AccessibilityService() {
             if (hash != lastScreenHash) {
                 lastScreenHash = hash
                 FloatingButtonManager.flash()
-                if (MessageNotificationService.awayMode) {
-                    MessageNotificationService.sendAwayReply(this, screen)
-                }
             }
         }.also { handler.postDelayed(it, 1500) }
     }
@@ -68,6 +65,8 @@ class AssistAccessibilityService : AccessibilityService() {
     private fun scheduleNextPing() {
         if (!stayOnlineEnabled) return
         stayOnlineRunnable = Runnable {
+            // Temporarily pause flash debounce so the gesture doesn't trigger a flash
+            flashDebounce?.let { handler.removeCallbacks(it) }
             performStayOnlineGesture()
             if (stayOnlineEnabled) scheduleNextPing()
         }.also {
