@@ -5,6 +5,7 @@ import android.accessibilityservice.GestureDescription
 import android.graphics.Path
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 
@@ -22,6 +23,7 @@ class AssistAccessibilityService : AccessibilityService() {
     private var flashDebounce: Runnable? = null
     private var lastScreenHash = 0
     private var stayOnlineRunnable: Runnable? = null
+    private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -54,6 +56,12 @@ class AssistAccessibilityService : AccessibilityService() {
     fun startStayOnline() {
         stopStayOnline()
         stayOnlineEnabled = true
+        // Keep screen on while Stay Online is active
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
+        wakeLock = pm.newWakeLock(
+            PowerManager.SCREEN_DIM_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
+            "NAKAssist:StayOnline"
+        ).also { it.acquire(12 * 60 * 60 * 1000L) } // max 12 hours
         scheduleNextPing()
     }
 
@@ -61,6 +69,8 @@ class AssistAccessibilityService : AccessibilityService() {
         stayOnlineEnabled = false
         stayOnlineRunnable?.let { handler.removeCallbacks(it) }
         stayOnlineRunnable = null
+        wakeLock?.let { if (it.isHeld) it.release() }
+        wakeLock = null
     }
 
     private fun scheduleNextPing() {

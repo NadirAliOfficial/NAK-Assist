@@ -77,10 +77,12 @@ object FloatingButtonManager {
                         if (!moved) {
                             val now = System.currentTimeMillis()
                             if (now - lastTapTime < 400) {
-                                // Double tap → mode selector
+                                // Double tap → mode selector (delay lets touch events settle)
                                 lastTapTime = 0
                                 handler.removeCallbacksAndMessages(null)
-                                AssistAccessibilityService.instance?.openModeSelector()
+                                handler.postDelayed({
+                                    AssistAccessibilityService.instance?.openModeSelector()
+                                }, 150)
                             } else {
                                 // Single tap → smart reply
                                 lastTapTime = now
