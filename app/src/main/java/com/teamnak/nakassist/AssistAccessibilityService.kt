@@ -76,16 +76,22 @@ class AssistAccessibilityService : AccessibilityService() {
         val args = android.os.Bundle()
         args.putCharSequence(android.view.accessibility.AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
         inputNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_SET_TEXT, args)
-        inputNode.recycle()
 
-        // Click Send button after text is set
+        // Try IME action first (most reliable — same as pressing Send on keyboard)
+        // Fall back to finding the send button by searching siblings
         handler.postDelayed({
-            val r = rootInActiveWindow ?: return@postDelayed
-            findSendButton(r)?.let { btn ->
-                btn.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
-                btn.recycle()
+            val sent = inputNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_IME_ACTION)
+            if (!sent) {
+                val r = rootInActiveWindow
+                if (r != null) {
+                    findSendButton(r, inputNode)?.let { btn ->
+                        btn.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
+                        btn.recycle()
+                    }
+                    r.recycle()
+                }
             }
-            r.recycle()
+            inputNode.recycle()
         }, 600)
 
         root.recycle()
@@ -100,14 +106,20 @@ class AssistAccessibilityService : AccessibilityService() {
         return null
     }
 
-    private fun findSendButton(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
-        val desc = node.contentDescription?.toString()?.lowercase() ?: ""
-        val text = node.text?.toString()?.lowercase() ?: ""
-        if (node.isClickable && (desc.contains("send") || text == "send")) return node
-        for (i in 0 until node.childCount) {
-            val result = findSendButton(node.getChild(i) ?: continue)
-            if (result != null) return result
+    // Find a clickable button that is a sibling or near the input field
+    private fun findSendButton(root: AccessibilityNodeInfo, inputNode: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        // Try by content description
+        for (desc in listOf("Send", "Send message", "send", "submit")) {
+            val nodes = root.findAccessibilityNodeInfosByText(desc)
+            if (nodes.isNotEmpty()) return nodes[0]
         }
+        // Try: find input's parent, then look for last clickable sibling
+        val parent = inputNode.parent ?: return null
+        for (i in parent.childCount - 1 downTo 0) {
+            val child = parent.getChild(i) ?: continue
+            if (child.isClickable && !child.isEditable) return child
+        }
+        parent.recycle()
         return null
     }
 
