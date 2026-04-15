@@ -10,18 +10,22 @@ import android.view.accessibility.AccessibilityNodeInfo
 
 class AssistAccessibilityService : AccessibilityService() {
 
+    enum class Persona { TRADING, FLUTTER, WEB3, GENERAL }
+
     companion object {
         var instance: AssistAccessibilityService? = null
         private val FIVERR_PACKAGES = setOf("com.fiverr.fiverr", "com.fiverr.android")
 
         var stayOnlineEnabled = false
         var stayOnlineInterval = 21 // seconds
+        var currentPersona = Persona.TRADING
     }
 
     private val handler = Handler(Looper.getMainLooper())
     private var flashDebounce: Runnable? = null
     private var lastScreenHash = 0
     private var stayOnlineRunnable: Runnable? = null
+    private var isGeneratingAwayReply = false
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -34,11 +38,11 @@ class AssistAccessibilityService : AccessibilityService() {
         if (pkg !in FIVERR_PACKAGES) return
 
         // When Fiverr conversation screen opens and Away Mode triggered
-        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
-            MessageNotificationService.pendingAwayTrigger) {
+        if (MessageNotificationService.pendingAwayTrigger &&
+            (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+             event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED)) {
             MessageNotificationService.pendingAwayTrigger = false
-            // Wait for conversation to load, then generate reply
-            handler.postDelayed({ waitForConversationAndReply(0) }, 2000)
+            handler.postDelayed({ waitForConversationAndReply(0) }, 800)
             return
         }
 
@@ -57,65 +61,123 @@ class AssistAccessibilityService : AccessibilityService() {
     }
 
     private fun fixLinks(text: String): String {
+        // Strip any existing prefix first, then re-add — prevents https://https:// doubles
         return text
-            .replace(Regex("(?<!https?://)(?<!/)\\b(github\\.com)")) { "https://${it.value}" }
-            .replace(Regex("(?<!https?://)(?<!/)\\b(theteamnak\\.com)")) { "https://www.${it.value}" }
+            .replace(Regex("https?://(?:www\\.)?github\\.com/NadirAliOfficial"), "__GITHUB__")
+            .replace(Regex("github\\.com/NadirAliOfficial"), "__GITHUB__")
+            .replace("__GITHUB__", "https://github.com/NadirAliOfficial")
+            .replace(Regex("https?://(?:www\\.)?theteamnak\\.com"), "__TEAMNAK__")
+            .replace(Regex("theteamnak\\.com"), "__TEAMNAK__")
+            .replace("__TEAMNAK__", "https://www.theteamnak.com")
     }
 
     private fun waitForConversationAndReply(attempt: Int) {
+        if (isGeneratingAwayReply) return
         val screen = readScreen()
-        // Check that screen has actual conversation content (messages visible)
-        val hasMessages = screen != null &&
-            screen.lines().count { it.isNotBlank() } >= 3 &&
-            !screen.contains("Type a message") == false || screen?.contains("Type a message") == true
+        val root = rootInActiveWindow
+        val inputNode = root?.let { findEditableNode(it) }
+        root?.recycle()
+        val conversationReady = screen != null && inputNode != null
 
-        if (screen != null && screen.contains("Type a message") && attempt < 8) {
+        if (conversationReady && screen != null) {
+            inputNode?.recycle()
             generateAwayReplyFromScreen(screen)
-        } else if (attempt < 8) {
-            // Not loaded yet — wait another second and retry
+        } else if (attempt < 10) {
+            inputNode?.recycle()
             handler.postDelayed({ waitForConversationAndReply(attempt + 1) }, 1000)
         }
     }
 
-    private fun generateAwayReplyFromScreen(screen: String) {
-        val screen = readScreen() ?: return
-
-        GroqApiHelper.ask(
-            systemPrompt = """You are Nadir Ali Khan — a Fiverr Level 2 seller and software developer. Reply to the buyer based on the conversation context.
-
-Your expertise: trading bots (IBKR, MT5, TradingView), AI automation, Web3/blockchain, Flutter apps, backend systems/APIs.
-
-Style:
-- Casual, confident, human — like a developer texting a client
-- 1-2 sentences max
-- Stay strictly on the topic of the conversation — do NOT mention technologies unrelated to what buyer asked
-- Never start with "I", "Thanks", "Hi", "Hello"
-- No filler phrases
-
-Portfolio: if buyer asks for past work/examples, share the website AND the relevant GitHub repos based on the conversation topic:
-- Website: https://www.theteamnak.com
-- IBKR topic → github.com/NadirAliOfficial/ninabot, github.com/NadirAliOfficial/ibkr-copytrade-engine, github.com/NadirAliOfficial/tv-ibkr-v3
-- MT5 topic → github.com/NadirAliOfficial/STAR-EA-v11.20, github.com/NadirAliOfficial/eurusd-scalper-ea
-- Web3/Solana topic → github.com/NadirAliOfficial/teller-solana-dapp, github.com/NadirAliOfficial/flash-loan-arbitrage-bot
-- TradingView topic → github.com/NadirAliOfficial/tradingview-ibkr-auto-bridge, github.com/NadirAliOfficial/tradingview-capitalcom-bot
-- General → github.com/NadirAliOfficial
-
+    private fun personaPrompt(): String {
+        val blocked = """
 IMPORTANT — Fiverr blocks these, never use them:
 - gmail, yahoo, email, phone, number, call, skype, zoom, telegram, discord, whatsapp, slack
 - payment, pay, paypal, crypto, bitcoin, transfer, invoice
-- @ symbols
+- @ symbols"""
 
-Output ONLY the reply text, nothing else.""",
+        val style = """
+Style:
+- Casual, confident, human — like a developer texting a client
+- 2-3 sentences max
+- Stay strictly on the topic of the conversation
+- Never start with "I", "Thanks", "Hi", "Hello"
+- No filler phrases
+- ONLY reply to the buyer's LAST message — ignore the rest of the history except for context
+- If the buyer's last message is very short (?, !!, one word with no clear meaning), ask ONE simple clarifying question
+
+Effective communication rules (critical for Fiverr score):
+- Always acknowledge what the buyer just said before answering
+- Be specific — mention timelines, process, or deliverables where relevant
+- If the buyer's requirement is unclear, ask ONE short clarifying question
+- Always end with a clear next step (e.g. "share your requirements", "I'll send an offer", "let me know X")
+- If buyer says ok/thanks/got it/sure/noted/alright/sounds good, reply with 2-3 words only (e.g. "Sounds great!", "Anytime!", "Perfect!")
+- If buyer says bye/goodbye/see you/take care/bye for now/not now, reply with ONLY a short farewell like "Talk soon!" — no pitching, no next steps"""
+
+        val portfolio = "Portfolio: if buyer asks for past work, put EACH URL on its own line:\nWebsite: https://www.theteamnak.com"
+
+        return when (currentPersona) {
+            Persona.TRADING -> """You are Nadir Ali Khan — Fiverr Level 2 seller specializing in trading bots (IBKR, MT5, TradingView), algo trading, and financial automation.
+$style
+$portfolio
+IBKR bots: https://github.com/NadirAliOfficial/ninabot
+https://github.com/NadirAliOfficial/ibkr-copytrade-engine
+https://github.com/NadirAliOfficial/tv-ibkr-v3
+MT5 bots: https://github.com/NadirAliOfficial/STAR-EA-v11.20
+https://github.com/NadirAliOfficial/eurusd-scalper-ea
+TradingView: https://github.com/NadirAliOfficial/tradingview-ibkr-auto-bridge
+$blocked
+Output ONLY the reply or SKIP."""
+
+            Persona.FLUTTER -> """You are Nadir Ali Khan — Fiverr Level 2 seller specializing in Flutter mobile app development, cross-platform apps (iOS & Android), and Firebase/backend integration.
+$style
+$portfolio
+Flutter/Mobile work: https://github.com/NadirAliOfficial
+$blocked
+Output ONLY the reply or SKIP."""
+
+            Persona.WEB3 -> """You are Nadir Ali Khan — Fiverr Level 2 seller specializing in Web3, blockchain, Solana, smart contracts, DeFi, and crypto bots.
+$style
+$portfolio
+Web3 projects: https://github.com/NadirAliOfficial/teller-solana-dapp
+https://github.com/NadirAliOfficial/flash-loan-arbitrage-bot
+$blocked
+Output ONLY the reply or SKIP."""
+
+            Persona.GENERAL -> """You are Nadir Ali Khan — Fiverr Level 2 seller and full-stack developer. Expertise: APIs, backend systems, AI automation, bots, web apps.
+$style
+$portfolio
+All projects: https://github.com/NadirAliOfficial
+$blocked
+Output ONLY the reply or SKIP."""
+        }
+    }
+
+    private fun generateAwayReplyFromScreen(screen: String) {
+        isGeneratingAwayReply = true
+
+        GroqApiHelper.ask(
+            systemPrompt = personaPrompt(),
             userContent = "Conversation:\n$screen\n\nWrite Nadir's reply:",
-            maxTokens = 80,
-            onResult = { reply -> injectAndSend(fixLinks(reply)) },
-            onError = {}
+            maxTokens = 120,
+            onResult = { reply ->
+                val clean = reply.trim()
+                if (clean.isBlank() || clean.length < 3) {
+                    isGeneratingAwayReply = false
+                } else {
+                    injectAndSend(fixLinks(clean)) { isGeneratingAwayReply = false }
+                }
+            },
+            onError = { err ->
+                isGeneratingAwayReply = false
+                android.util.Log.e("NAKAssist", "Away reply error: $err")
+            }
         )
     }
 
-    private fun injectAndSend(text: String, attempt: Int = 0) {
+    private fun injectAndSend(text: String, attempt: Int = 0, onDone: (() -> Unit)? = null) {
         val root = rootInActiveWindow ?: run {
-            if (attempt < 5) handler.postDelayed({ injectAndSend(text, attempt + 1) }, 1000)
+            if (attempt < 5) handler.postDelayed({ injectAndSend(text, attempt + 1, onDone) }, 1000)
+            else onDone?.invoke()
             return
         }
 
@@ -123,7 +185,8 @@ Output ONLY the reply text, nothing else.""",
         val inputNode = findEditableNode(root)
         if (inputNode == null) {
             root.recycle()
-            if (attempt < 5) handler.postDelayed({ injectAndSend(text, attempt + 1) }, 1000)
+            if (attempt < 5) handler.postDelayed({ injectAndSend(text, attempt + 1, onDone) }, 1000)
+            else onDone?.invoke()
             return
         }
 
@@ -142,6 +205,7 @@ Output ONLY the reply text, nothing else.""",
                 r.recycle()
             }
             inputNode.recycle()
+            onDone?.invoke()
 
             // Go back once: conversation → Fiverr inbox
             // Inbox is enough — Fiverr sends notifications when you're not inside the conversation
@@ -150,8 +214,8 @@ Output ONLY the reply text, nothing else.""",
                 if (wasOnline) stopStayOnline()
                 performGlobalAction(GLOBAL_ACTION_BACK)
                 if (wasOnline) handler.postDelayed({ startStayOnline() }, 1000)
-            }, 1500)
-        }, 600)
+            }, 800)
+        }, 500)
 
         root.recycle()
     }
@@ -217,9 +281,9 @@ Output ONLY the reply text, nothing else.""",
 
     private fun performStayOnlineGesture() {
         val metrics = resources.displayMetrics
-        val cx = metrics.widthPixels / 2f
-        // Use top 8% of screen — status bar / title area, nothing clickable there
-        val cy = metrics.heightPixels * 0.08f
+        // Top-right corner: battery/signal icons area — nothing clickable there
+        val cx = metrics.widthPixels * 0.95f
+        val cy = metrics.heightPixels * 0.01f
 
         val path = Path().apply { moveTo(cx, cy); lineTo(cx, cy + 2f) }
         val gesture = GestureDescription.Builder()
@@ -276,7 +340,7 @@ Output ONLY the reply text, nothing else.""",
         val root = rootInActiveWindow ?: return null
         val text = extractText(root)
         root.recycle()
-        return if (text.isBlank()) null else text.takeLast(1200) // last 1200 chars = most recent messages
+        return if (text.isBlank()) null else text.takeLast(4000) // enough to cover full conversation context
     }
 
     private fun extractText(node: AccessibilityNodeInfo): String {

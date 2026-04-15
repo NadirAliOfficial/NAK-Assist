@@ -135,6 +135,31 @@ object ModeSelector {
                 FloatingButtonManager.setAwayMode(on)
             }
 
+            // Persona selector
+            val personaButtons = mapOf(
+                R.id.btnPersonaTrading to AssistAccessibilityService.Persona.TRADING,
+                R.id.btnPersonaFlutter to AssistAccessibilityService.Persona.FLUTTER,
+                R.id.btnPersonaWeb3    to AssistAccessibilityService.Persona.WEB3,
+                R.id.btnPersonaGeneral to AssistAccessibilityService.Persona.GENERAL
+            )
+            fun updatePersonaButtons() {
+                personaButtons.forEach { (id, persona) ->
+                    view.findViewById<Button>(id).backgroundTintList =
+                        android.content.res.ColorStateList.valueOf(
+                            if (AssistAccessibilityService.currentPersona == persona)
+                                android.graphics.Color.parseColor("#1565C0")
+                            else android.graphics.Color.parseColor("#333333")
+                        )
+                }
+            }
+            updatePersonaButtons()
+            personaButtons.forEach { (id, persona) ->
+                view.findViewById<Button>(id).setOnClickListener {
+                    AssistAccessibilityService.currentPersona = persona
+                    updatePersonaButtons()
+                }
+            }
+
             view.findViewById<Button>(R.id.btnTemplates).setOnClickListener {
                 dismiss()
                 showTemplates(context, service)
@@ -163,7 +188,7 @@ object ModeSelector {
         val canPaste = mode !in listOf("summarize")
 
         // Trim input to reduce token usage — take last portion (most recent/relevant)
-        val trimmed = screenText.takeLast(800)
+        val trimmed = screenText.takeLast(3000)
 
         val (system, user, tokens) = when (mode) {
             "smartreply" -> {

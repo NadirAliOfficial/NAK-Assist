@@ -123,7 +123,27 @@
             <Button android:id="@+id/btnAwayModeToggle" android:layout_width="match_parent"
                 android:layout_height="44dp" android:text="💤 Away Mode: OFF"
                 android:backgroundTint="#555555" android:textColor="@android:color/white"
-                android:textSize="13sp" android:layout_marginBottom="8dp"/>
+                android:textSize="13sp" android:layout_marginBottom="6dp"/>
+
+            <!-- Persona -->
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Persona" android:textColor="#AAAAAA" android:textSize="11sp"
+                android:layout_marginBottom="4dp"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginBottom="8dp">
+                <Button android:id="@+id/btnPersonaTrading" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="36dp" android:text="📈 Trading" android:backgroundTint="#1565C0"
+                    android:textColor="@android:color/white" android:textSize="11sp" android:layout_marginEnd="4dp"/>
+                <Button android:id="@+id/btnPersonaFlutter" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="36dp" android:text="📱 Flutter" android:backgroundTint="#333333"
+                    android:textColor="@android:color/white" android:textSize="11sp" android:layout_marginEnd="4dp"/>
+                <Button android:id="@+id/btnPersonaWeb3" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="36dp" android:text="⛓ Web3" android:backgroundTint="#333333"
+                    android:textColor="@android:color/white" android:textSize="11sp" android:layout_marginEnd="4dp"/>
+                <Button android:id="@+id/btnPersonaGeneral" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="36dp" android:text="⚙ General" android:backgroundTint="#333333"
+                    android:textColor="@android:color/white" android:textSize="11sp"/>
+            </LinearLayout>
 
             <!-- Custom command -->
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
