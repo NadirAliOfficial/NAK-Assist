@@ -60,27 +60,26 @@ object ModeSelector {
                 }
             }
 
-            // Auto-refresh toggle
-            val btnAutoRefresh = view.findViewById<Button>(R.id.btnAutoRefreshToggle)
-            val service = service
-            fun updateAutoRefreshBtn() {
-                val on = AssistAccessibilityService.autoRefreshEnabled
-                val secs = AssistAccessibilityService.autoRefreshInterval
-                btnAutoRefresh.text = if (on) "🔄 Auto-Refresh: ON (${secs}s)" else "🔄 Auto-Refresh: OFF"
-                btnAutoRefresh.backgroundTintList = android.content.res.ColorStateList.valueOf(
+            // Stay Online toggle
+            val btnStayOnline = view.findViewById<Button>(R.id.btnAutoRefreshToggle)
+            fun updateStayOnlineBtn() {
+                val on = AssistAccessibilityService.stayOnlineEnabled
+                val secs = AssistAccessibilityService.stayOnlineInterval
+                btnStayOnline.text = if (on) "🟢 Stay Online: ON (${secs}s)" else "🟢 Stay Online: OFF"
+                btnStayOnline.backgroundTintList = android.content.res.ColorStateList.valueOf(
                     if (on) android.graphics.Color.parseColor("#1565C0")
                     else android.graphics.Color.parseColor("#555555")
                 )
             }
-            updateAutoRefreshBtn()
-            btnAutoRefresh.setOnClickListener {
+            updateStayOnlineBtn()
+            btnStayOnline.setOnClickListener {
                 val svc = AssistAccessibilityService.instance
-                if (AssistAccessibilityService.autoRefreshEnabled) {
-                    svc?.stopAutoRefresh()
+                if (AssistAccessibilityService.stayOnlineEnabled) {
+                    svc?.stopStayOnline()
                 } else {
-                    svc?.startAutoRefresh()
+                    svc?.startStayOnline()
                 }
-                updateAutoRefreshBtn()
+                updateStayOnlineBtn()
             }
 
             // Interval buttons
@@ -92,23 +91,23 @@ object ModeSelector {
             )
             fun updateIntervalButtons() {
                 intervals.forEach { (id, secs) ->
-                    val btn = view.findViewById<Button>(id)
-                    btn.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                        if (AssistAccessibilityService.autoRefreshInterval == secs)
-                            android.graphics.Color.parseColor("#1565C0")
-                        else android.graphics.Color.parseColor("#333333")
-                    )
+                    view.findViewById<Button>(id).backgroundTintList =
+                        android.content.res.ColorStateList.valueOf(
+                            if (AssistAccessibilityService.stayOnlineInterval == secs)
+                                android.graphics.Color.parseColor("#1565C0")
+                            else android.graphics.Color.parseColor("#333333")
+                        )
                 }
             }
             updateIntervalButtons()
             intervals.forEach { (id, secs) ->
                 view.findViewById<Button>(id).setOnClickListener {
-                    AssistAccessibilityService.autoRefreshInterval = secs
-                    if (AssistAccessibilityService.autoRefreshEnabled) {
-                        AssistAccessibilityService.instance?.startAutoRefresh()
+                    AssistAccessibilityService.stayOnlineInterval = secs
+                    if (AssistAccessibilityService.stayOnlineEnabled) {
+                        AssistAccessibilityService.instance?.startStayOnline()
                     }
                     updateIntervalButtons()
-                    updateAutoRefreshBtn()
+                    updateStayOnlineBtn()
                 }
             }
 

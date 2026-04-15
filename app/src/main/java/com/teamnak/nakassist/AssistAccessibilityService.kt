@@ -1,6 +1,8 @@
 package com.teamnak.nakassist
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.GestureDescription
+import android.graphics.Path
 import android.os.Handler
 import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
@@ -12,14 +14,14 @@ class AssistAccessibilityService : AccessibilityService() {
         var instance: AssistAccessibilityService? = null
         private val FIVERR_PACKAGES = setOf("com.fiverr.fiverr", "com.fiverr.android")
 
-        var autoRefreshEnabled = false
-        var autoRefreshInterval = 10 // seconds
+        var stayOnlineEnabled = false
+        var stayOnlineInterval = 21 // seconds
     }
 
     private val handler = Handler(Looper.getMainLooper())
     private var flashDebounce: Runnable? = null
     private var lastScreenHash = 0
-    private var autoRefreshRunnable: Runnable? = null
+    private var stayOnlineRunnable: Runnable? = null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -33,7 +35,6 @@ class AssistAccessibilityService : AccessibilityService() {
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
             event.eventType != AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) return
 
-        // Debounce: only react once per 1.5s burst of changes
         flashDebounce?.let { handler.removeCallbacks(it) }
         flashDebounce = Runnable {
             val screen = readScreen() ?: return@Runnable
@@ -47,6 +48,49 @@ class AssistAccessibilityService : AccessibilityService() {
             }
         }.also { handler.postDelayed(it, 1500) }
     }
+
+    // ── Stay Online ──────────────────────────────────────────────────────────
+
+    fun startStayOnline() {
+        stopStayOnline()
+        stayOnlineEnabled = true
+        scheduleNextPing()
+    }
+
+    fun stopStayOnline() {
+        stayOnlineEnabled = false
+        stayOnlineRunnable?.let { handler.removeCallbacks(it) }
+        stayOnlineRunnable = null
+    }
+
+    private fun scheduleNextPing() {
+        if (!stayOnlineEnabled) return
+        stayOnlineRunnable = Runnable {
+            performStayOnlineGesture()
+            if (stayOnlineEnabled) scheduleNextPing()
+        }.also {
+            handler.postDelayed(it, stayOnlineInterval * 1000L)
+        }
+    }
+
+    private fun performStayOnlineGesture() {
+        val metrics = resources.displayMetrics
+        val cx = metrics.widthPixels / 2f
+        val cy = metrics.heightPixels / 2f
+
+        // Tiny 4px swipe down then back up — invisible but counts as activity
+        val down = Path().apply { moveTo(cx, cy); lineTo(cx, cy + 4f) }
+        val up   = Path().apply { moveTo(cx, cy + 4f); lineTo(cx, cy) }
+
+        val gesture = GestureDescription.Builder()
+            .addStroke(GestureDescription.StrokeDescription(down, 0,   80))
+            .addStroke(GestureDescription.StrokeDescription(up,   100, 80))
+            .build()
+
+        dispatchGesture(gesture, null, null)
+    }
+
+    // ── AI modes ─────────────────────────────────────────────────────────────
 
     fun smartReply() {
         val screen = readScreen() ?: return
@@ -108,47 +152,15 @@ class AssistAccessibilityService : AccessibilityService() {
         return parts.joinToString("\n")
     }
 
-    fun startAutoRefresh() {
-        stopAutoRefresh()
-        autoRefreshEnabled = true
-        scheduleNextRefresh()
-    }
-
-    fun stopAutoRefresh() {
-        autoRefreshEnabled = false
-        autoRefreshRunnable?.let { handler.removeCallbacks(it) }
-        autoRefreshRunnable = null
-    }
-
-    private fun scheduleNextRefresh() {
-        if (!autoRefreshEnabled) return
-        autoRefreshRunnable = Runnable {
-            val screen = readScreen()
-            if (screen != null) {
-                val hash = screen.hashCode()
-                if (hash != lastScreenHash) {
-                    lastScreenHash = hash
-                    FloatingButtonManager.flash()
-                    if (MessageNotificationService.awayMode) {
-                        MessageNotificationService.sendAwayReply(this, screen)
-                    }
-                }
-            }
-            if (autoRefreshEnabled) scheduleNextRefresh()
-        }.also {
-            handler.postDelayed(it, autoRefreshInterval * 1000L)
-        }
-    }
-
     override fun onInterrupt() {
-        stopAutoRefresh()
+        stopStayOnline()
         OverlayManager.dismiss()
         ModeSelector.dismiss()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        stopAutoRefresh()
+        stopStayOnline()
         instance = null
         FloatingButtonManager.dismiss()
         OverlayManager.dismiss()
