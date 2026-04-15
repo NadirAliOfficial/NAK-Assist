@@ -1,6 +1,8 @@
 package com.teamnak.nakassist
 
 import android.accessibilityservice.AccessibilityService
+import android.os.Handler
+import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 
@@ -8,7 +10,12 @@ class AssistAccessibilityService : AccessibilityService() {
 
     companion object {
         var instance: AssistAccessibilityService? = null
+        private val FIVERR_PACKAGES = setOf("com.fiverr.fiverr", "com.fiverr.android")
     }
+
+    private val handler = Handler(Looper.getMainLooper())
+    private var flashDebounce: Runnable? = null
+    private var lastScreenHash = 0
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -17,7 +24,24 @@ class AssistAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        // Manual trigger only
+        val pkg = event.packageName?.toString() ?: return
+        if (pkg !in FIVERR_PACKAGES) return
+        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
+            event.eventType != AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) return
+
+        // Debounce: only react once per 1.5s burst of changes
+        flashDebounce?.let { handler.removeCallbacks(it) }
+        flashDebounce = Runnable {
+            val screen = readScreen() ?: return@Runnable
+            val hash = screen.hashCode()
+            if (hash != lastScreenHash) {
+                lastScreenHash = hash
+                FloatingButtonManager.flash()
+                if (MessageNotificationService.awayMode) {
+                    MessageNotificationService.sendAwayReply(this, screen)
+                }
+            }
+        }.also { handler.postDelayed(it, 1500) }
     }
 
     fun smartReply() {

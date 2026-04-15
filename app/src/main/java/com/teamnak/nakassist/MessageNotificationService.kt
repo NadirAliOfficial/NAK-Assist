@@ -15,6 +15,21 @@ class MessageNotificationService : NotificationListenerService() {
             "com.fiverr.fiverr",
             "com.fiverr.android"
         )
+
+        fun sendAwayReply(service: AssistAccessibilityService, screenText: String) {
+            val lastMsg = screenText.lines().lastOrNull { it.isNotBlank() } ?: return
+            GroqApiHelper.ask(
+                systemPrompt = "You are a professional Fiverr SELLER. Write a brief, friendly holding reply (1–2 sentences) to acknowledge you received the buyer's message and will get back to them soon. Output ONLY the reply text.",
+                userContent = "Conversation:\n$screenText\n\nWrite a holding reply as the seller:",
+                maxTokens = 80,
+                onResult = { reply ->
+                    OverlayManager.show(service, "⚡ Away Reply Ready:\n\n$reply", showPaste = true) { t ->
+                        TextInjector.inject(service, t)
+                    }
+                },
+                onError = {}
+            )
+        }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
