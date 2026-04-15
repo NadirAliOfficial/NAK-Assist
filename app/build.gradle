@@ -17,6 +17,13 @@ android {
 
     buildTypes {
         release { minifyEnabled false }
+        debug { archivesBaseName = "NAK-Assist" }
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "NAK-Assist-${variant.versionName}.apk"
+        }
     }
 
     compileOptions {
