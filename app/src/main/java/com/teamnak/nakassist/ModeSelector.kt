@@ -173,6 +173,11 @@ object ModeSelector {
                 }
             }
 
+            view.findViewById<Button>(R.id.btnSettings).setOnClickListener {
+                dismiss()
+                showApiKeySettings(context)
+            }
+
             selectorView = view
             windowManager?.addView(view, params)
         }
@@ -298,6 +303,109 @@ object ModeSelector {
 
             selectorView = view
             windowManager?.addView(view, params)
+        }
+    }
+
+    private fun showApiKeySettings(context: Context) {
+        handler.post {
+            dismissInternal()
+            windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+
+            val params = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                android.graphics.PixelFormat.TRANSLUCENT
+            ).apply {
+                gravity = android.view.Gravity.BOTTOM
+                softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
+                        WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+            }
+
+            val layout = android.widget.LinearLayout(context).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                setBackgroundColor(android.graphics.Color.parseColor("#EE1B1B1B"))
+                val dp16 = (16 * context.resources.displayMetrics.density).toInt()
+                setPadding(dp16, dp16, dp16, dp16)
+            }
+
+            val title = android.widget.TextView(context).apply {
+                text = "⚙ Groq API Keys"
+                setTextColor(android.graphics.Color.WHITE)
+                textSize = 15f
+                val dp = (context.resources.displayMetrics.density).toInt()
+                setPadding(0, 0, 0, 12 * dp)
+            }
+
+            val hint = android.widget.TextView(context).apply {
+                text = "Get free keys at console.groq.com\nEnter one key per line (up to 3 for rotation):"
+                setTextColor(android.graphics.Color.parseColor("#AAAAAA"))
+                textSize = 12f
+                val dp = (context.resources.displayMetrics.density).toInt()
+                setPadding(0, 0, 0, 8 * dp)
+            }
+
+            val input = android.widget.EditText(context).apply {
+                val saved = GroqApiHelper.getSavedKeys(context)
+                setText(saved.replace(",", "\n"))
+                setHint("gsk_...")
+                setTextColor(android.graphics.Color.WHITE)
+                setHintTextColor(android.graphics.Color.parseColor("#888888"))
+                setBackgroundColor(android.graphics.Color.parseColor("#333333"))
+                textSize = 13f
+                inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+                minLines = 3
+                maxLines = 5
+                val dp = (context.resources.displayMetrics.density).toInt()
+                setPadding(10 * dp, 8 * dp, 10 * dp, 8 * dp)
+                val lp = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                lp.bottomMargin = 12 * dp
+                layoutParams = lp
+            }
+
+            val btnRow = android.widget.LinearLayout(context).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+            }
+
+            val btnCancel = android.widget.Button(context).apply {
+                text = "Cancel"
+                setBackgroundColor(android.graphics.Color.parseColor("#555555"))
+                setTextColor(android.graphics.Color.WHITE)
+                val dp = (context.resources.displayMetrics.density).toInt()
+                val lp = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                lp.marginEnd = 8 * dp
+                layoutParams = lp
+                setOnClickListener { dismiss() }
+            }
+
+            val btnSave = android.widget.Button(context).apply {
+                text = "Save"
+                setBackgroundColor(android.graphics.Color.parseColor("#1B5E20"))
+                setTextColor(android.graphics.Color.WHITE)
+                layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                setOnClickListener {
+                    val keys = input.text.toString()
+                        .split("\n").map { it.trim() }.filter { it.isNotEmpty() }
+                        .joinToString(",")
+                    GroqApiHelper.saveKeys(context, keys)
+                    dismiss()
+                    OverlayManager.show(context, "✅ API key saved!")
+                }
+            }
+
+            btnRow.addView(btnCancel)
+            btnRow.addView(btnSave)
+            layout.addView(title)
+            layout.addView(hint)
+            layout.addView(input)
+            layout.addView(btnRow)
+
+            selectorView = layout
+            windowManager?.addView(layout, params)
         }
     }
 

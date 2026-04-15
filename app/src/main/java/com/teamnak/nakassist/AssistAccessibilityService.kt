@@ -30,6 +30,7 @@ class AssistAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+        GroqApiHelper.init(this)
         FloatingButtonManager.show(this)
     }
 
