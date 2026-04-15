@@ -22,7 +22,7 @@
         android:text="by Nadir Ali Khan — Team NAK"
         android:textSize="13sp"
         android:textColor="#888888"
-        android:layout_marginBottom="48dp" />
+        android:layout_marginBottom="40dp" />
 
     <Button
         android:id="@+id/btnOverlay"
@@ -31,7 +31,7 @@
         android:text="Grant Overlay Permission"
         android:backgroundTint="#1B5E20"
         android:textColor="@android:color/white"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="12dp" />
 
     <Button
         android:id="@+id/btnAccessibility"
@@ -40,7 +40,25 @@
         android:text="Enable Accessibility Service"
         android:backgroundTint="#2E7D32"
         android:textColor="@android:color/white"
-        android:layout_marginBottom="32dp" />
+        android:layout_marginBottom="12dp" />
+
+    <Button
+        android:id="@+id/btnNotification"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Enable Notification Access"
+        android:backgroundTint="#388E3C"
+        android:textColor="@android:color/white"
+        android:layout_marginBottom="12dp" />
+
+    <Button
+        android:id="@+id/btnAwayMode"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="💤 Away Mode: OFF"
+        android:backgroundTint="#555555"
+        android:textColor="@android:color/white"
+        android:layout_marginBottom="28dp" />
 
     <TextView
         android:id="@+id/tvStatus"
@@ -48,15 +66,15 @@
         android:layout_height="wrap_content"
         android:text="Status: Not ready"
         android:textSize="13sp"
-        android:textColor="#999999" />
+        android:textColor="#999999"
+        android:layout_marginBottom="20dp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="⚡ Tap = Smart Reply  |  ⚡⚡ Double = Summarize  |  Hold = More"
+        android:text="⚡ Tap = Smart Reply  |  ⚡⚡ Double = Summarize  |  Hold = More Modes"
         android:textSize="11sp"
         android:textColor="#AAAAAA"
-        android:layout_marginTop="24dp"
         android:gravity="center" />
 
 </LinearLayout>

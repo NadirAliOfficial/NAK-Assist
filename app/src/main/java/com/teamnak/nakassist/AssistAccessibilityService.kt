@@ -22,10 +22,18 @@ class AssistAccessibilityService : AccessibilityService() {
 
     fun smartReply() {
         val screen = readScreen() ?: return
+        val lastMsgLen = screen.lines().lastOrNull { it.isNotBlank() }?.length ?: 50
+        val lengthGuide = when {
+            lastMsgLen < 20 -> "Reply with 1 short sentence only."
+            lastMsgLen < 80 -> "Keep the reply to 1–2 sentences."
+            else            -> "Keep the reply to 2–3 sentences max."
+        }
         OverlayManager.showLoading(this, "Writing reply...")
         GroqApiHelper.ask(
-            systemPrompt = "You are a professional Fiverr seller assistant. Write a professional, friendly and concise reply to the buyer's latest message. Reply with only the message text, no extra words.",
-            userContent = "Conversation on screen:\n$screen",
+            systemPrompt = "You are a professional Fiverr SELLER (freelancer). The person messaging you is the BUYER (client). " +
+                "Write the next message FROM YOU (the seller) in response to the buyer's last message. " +
+                "$lengthGuide Stay on the topics discussed. Output ONLY the reply text — no labels, no explanations.",
+            userContent = "Fiverr conversation:\n$screen\n\nWrite your reply as the seller:",
             maxTokens = 150,
             onResult = { reply ->
                 OverlayManager.show(this, reply, showPaste = true) { text ->

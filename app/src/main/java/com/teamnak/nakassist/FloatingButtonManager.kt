@@ -113,6 +113,34 @@ object FloatingButtonManager {
         }
     }
 
+    fun flash() {
+        handler.post {
+            val btn = buttonView ?: return@post
+            btn.alpha = 1f
+            btn.setBackgroundColor(android.graphics.Color.parseColor("#DD4CAF50"))
+            handler.postDelayed({
+                btn.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                btn.background = android.graphics.drawable.GradientDrawable().apply {
+                    shape = android.graphics.drawable.GradientDrawable.OVAL
+                    setColor(android.graphics.Color.parseColor(
+                        if (MessageNotificationService.awayMode) "#DD9C27B0" else "#DD1B5E20"
+                    ))
+                }
+                btn.alpha = 0.4f
+            }, 1000)
+        }
+    }
+
+    fun setAwayMode(on: Boolean) {
+        handler.post {
+            buttonView?.background = android.graphics.drawable.GradientDrawable().apply {
+                shape = android.graphics.drawable.GradientDrawable.OVAL
+                setColor(android.graphics.Color.parseColor(if (on) "#DD9C27B0" else "#DD1B5E20"))
+            }
+            buttonView?.text = if (on) "💤" else "⚡"
+        }
+    }
+
     fun dismiss() {
         handler.post {
             buttonView?.let {

@@ -28,6 +28,25 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
 
+        findViewById<Button>(R.id.btnNotification).setOnClickListener {
+            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        }
+
+        val btnAway = findViewById<Button>(R.id.btnAwayMode)
+        btnAway.setOnClickListener {
+            MessageNotificationService.awayMode = !MessageNotificationService.awayMode
+            val on = MessageNotificationService.awayMode
+            btnAway.text = if (on) "💤 Away Mode: ON" else "💤 Away Mode: OFF"
+            btnAway.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                if (on) android.graphics.Color.parseColor("#9C27B0")
+                else android.graphics.Color.parseColor("#555555")
+            )
+            FloatingButtonManager.setAwayMode(on)
+            Toast.makeText(this,
+                if (on) "Away Mode ON — auto-replies enabled" else "Away Mode OFF",
+                Toast.LENGTH_SHORT).show()
+        }
+
         updateStatus()
     }
 
@@ -39,10 +58,13 @@ class MainActivity : AppCompatActivity() {
     private fun updateStatus() {
         val hasOverlay = Settings.canDrawOverlays(this)
         val hasAccessibility = isAccessibilityEnabled()
+        val hasNotification = isNotificationListenerEnabled()
+
         val status = when {
-            hasOverlay && hasAccessibility -> "Ready — open Fiverr and tap ⚡"
-            !hasOverlay -> "Missing overlay permission"
-            else -> "Enable accessibility service"
+            hasOverlay && hasAccessibility && hasNotification -> "✅ Fully ready — open Fiverr and tap ⚡"
+            hasOverlay && hasAccessibility -> "⚠️ Ready (no notification access)"
+            !hasOverlay -> "❌ Missing overlay permission"
+            else -> "❌ Enable accessibility service"
         }
         findViewById<TextView>(R.id.tvStatus).text = status
     }
@@ -50,6 +72,13 @@ class MainActivity : AppCompatActivity() {
     private fun isAccessibilityEnabled(): Boolean {
         val enabled = Settings.Secure.getString(
             contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        return enabled.contains(packageName)
+    }
+
+    private fun isNotificationListenerEnabled(): Boolean {
+        val enabled = Settings.Secure.getString(
+            contentResolver, "enabled_notification_listeners"
         ) ?: return false
         return enabled.contains(packageName)
     }

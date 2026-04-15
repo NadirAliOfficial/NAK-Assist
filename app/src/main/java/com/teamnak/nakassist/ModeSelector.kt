@@ -28,9 +28,15 @@ object ModeSelector {
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_SECURE,
+                // No FLAG_SECURE here — it breaks focusable overlays on many ROMs
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                        WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
                 PixelFormat.TRANSLUCENT
-            ).apply { gravity = Gravity.BOTTOM }
+            ).apply {
+                gravity = Gravity.BOTTOM
+                softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
+                        WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN
+            }
 
             view.findViewById<TextView>(R.id.tvCloseMode).setOnClickListener { dismiss() }
             val etCustom = view.findViewById<EditText>(R.id.etCustomCommand)
@@ -52,6 +58,24 @@ object ModeSelector {
                     dismiss()
                     runMode(context, service, screenText, mode)
                 }
+            }
+
+            // Away Mode toggle
+            val btnAway = view.findViewById<Button>(R.id.btnAwayModeToggle)
+            btnAway.text = if (MessageNotificationService.awayMode) "💤 Away Mode: ON" else "💤 Away Mode: OFF"
+            btnAway.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                if (MessageNotificationService.awayMode) android.graphics.Color.parseColor("#9C27B0")
+                else android.graphics.Color.parseColor("#555555")
+            )
+            btnAway.setOnClickListener {
+                MessageNotificationService.awayMode = !MessageNotificationService.awayMode
+                val on = MessageNotificationService.awayMode
+                btnAway.text = if (on) "💤 Away Mode: ON" else "💤 Away Mode: OFF"
+                btnAway.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                    if (on) android.graphics.Color.parseColor("#9C27B0")
+                    else android.graphics.Color.parseColor("#555555")
+                )
+                FloatingButtonManager.setAwayMode(on)
             }
 
             view.findViewById<Button>(R.id.btnTemplates).setOnClickListener {
@@ -82,44 +106,55 @@ object ModeSelector {
         val canPaste = mode !in listOf("summarize")
 
         val (system, user, tokens) = when (mode) {
-            "smartreply" -> Triple(
-                "You are a professional Fiverr seller. Write a professional, friendly and concise reply to the buyer's latest message. Return only the reply text.",
-                "Conversation:\n$screenText", 150
-            )
+            "smartreply" -> {
+                val lastMsgLen = screenText.lines().lastOrNull { it.isNotBlank() }?.length ?: 50
+                val lengthGuide = when {
+                    lastMsgLen < 20 -> "Reply with 1 short sentence only."
+                    lastMsgLen < 80 -> "Keep the reply to 1–2 sentences."
+                    else            -> "Keep the reply to 2–3 sentences max."
+                }
+                Triple(
+                    "You are a professional Fiverr SELLER (freelancer). The person messaging you is the BUYER (client). " +
+                    "Write the next message FROM YOU (the seller) in response to the buyer's last message. " +
+                    "$lengthGuide Stay on the topics discussed. Output ONLY the reply text — no labels, no explanations.",
+                    "Fiverr conversation:\n$screenText\n\nWrite your reply as the seller:",
+                    150
+                )
+            }
             "summarize" -> Triple(
-                "Summarize in 3-5 short bullet points. Be brief.",
+                "Summarize in 3–5 short bullet points. Be brief and clear.",
                 screenText, 150
             )
             "improve" -> Triple(
-                "Improve this text to be clearer and more professional. Return only the improved text.",
-                screenText, 200
+                "Improve the clarity, grammar, and flow of the text in <input> tags. Keep the same meaning, tone, length, and speaker perspective. Output ONLY the improved text.",
+                "<input>$screenText</input>", 200
             )
             "rewrite" -> Triple(
-                "Rewrite this text in a more polished way while keeping the same meaning. Return only the rewritten text.",
-                screenText, 200
+                "Rephrase the text in <input> tags using different wording. Keep the same meaning, length, and speaker perspective. Output ONLY the rewritten text.",
+                "<input>$screenText</input>", 200
             )
             "shorten" -> Triple(
-                "Shorten this text while keeping the key meaning. Return only the shortened text.",
-                screenText, 100
+                "Shorten the text in <input> tags. Keep the core meaning and speaker's voice. Output ONLY the shortened text.",
+                "<input>$screenText</input>", 100
             )
             "proofread" -> Triple(
-                "Fix all grammar, spelling, and punctuation errors. Return only the corrected text.",
-                screenText, 200
+                "Fix all grammar, spelling, and punctuation in the text in <input> tags. Do not change wording or style. Output ONLY the corrected text.",
+                "<input>$screenText</input>", 200
             )
             "professional" -> Triple(
-                "Rewrite this text in a formal, professional tone. Return only the rewritten text.",
-                screenText, 200
+                "Rewrite the text in <input> tags to sound formal and professional. Keep the same meaning and length. Output ONLY the rewritten text.",
+                "<input>$screenText</input>", 200
             )
             "friendly" -> Triple(
-                "Rewrite this text in a warm, friendly, conversational tone. Return only the rewritten text.",
-                screenText, 200
+                "Rewrite the text in <input> tags to sound warm and conversational. Keep the same meaning and length. Output ONLY the rewritten text.",
+                "<input>$screenText</input>", 200
             )
             "translate" -> Triple(
-                "Translate this text to English. Return only the translated text.",
-                screenText, 200
+                "Detect the language of the text in <input> tags. If it is not English, translate it to English. If it is already English, translate it to Spanish. Output ONLY the translation.",
+                "<input>$screenText</input>", 200
             )
             "custom" -> Triple(
-                "You are a smart AI assistant. Follow the user's instruction exactly. Return only the result.",
+                "You are a smart AI assistant. Follow the user's instruction exactly. Output ONLY the result, no explanation.",
                 "Instruction: $customCmd\n\nContent:\n$screenText", 200
             )
             else -> Triple("", screenText, 150)
@@ -149,7 +184,7 @@ object ModeSelector {
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
                 PixelFormat.TRANSLUCENT
             ).apply { gravity = Gravity.BOTTOM }
 

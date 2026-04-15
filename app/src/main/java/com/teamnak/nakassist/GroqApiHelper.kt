@@ -15,7 +15,7 @@ object GroqApiHelper {
         .readTimeout(20, TimeUnit.SECONDS)
         .build()
 
-    private const val API_KEY = "" // Set your Groq API key here
+    private const val API_KEY = "YOUR_GROQ_API_KEY_HERE"
     private const val MODEL = "llama-3.3-70b-versatile"
 
     fun ask(
