@@ -33,16 +33,13 @@ class AssistAccessibilityService : AccessibilityService() {
         val pkg = event.packageName?.toString() ?: return
         if (pkg !in FIVERR_PACKAGES) return
 
-        // When Fiverr conversation screen opens, inject pending away reply
-        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
-            event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
-            val pending = MessageNotificationService.pendingAwayReply
-            if (pending != null) {
-                MessageNotificationService.pendingAwayReply = null
-                // Wait 1.5s for Fiverr's UI to fully load, then inject + send
-                handler.postDelayed({ injectAndSend(pending) }, 1500)
-                return
-            }
+        // When Fiverr conversation screen opens and Away Mode triggered
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+            MessageNotificationService.pendingAwayTrigger) {
+            MessageNotificationService.pendingAwayTrigger = false
+            // Wait 2s for conversation to fully load, then read context & generate reply
+            handler.postDelayed({ generateAwayReplyFromScreen() }, 2000)
+            return
         }
 
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
@@ -57,6 +54,28 @@ class AssistAccessibilityService : AccessibilityService() {
                 FloatingButtonManager.flash()
             }
         }.also { handler.postDelayed(it, 1500) }
+    }
+
+    private fun generateAwayReplyFromScreen() {
+        val screen = readScreen() ?: return
+
+        GroqApiHelper.ask(
+            systemPrompt = """You are Nadir Ali Khan, a professional Fiverr freelancer (seller).
+Read the conversation below and write a natural, human-sounding holding reply to the buyer's latest message.
+Rules:
+- You are the SELLER, the other person is the BUYER
+- Sound like a real person texting, not a bot
+- 1-2 short sentences only
+- Acknowledge what they said specifically if possible
+- Casual but professional — like messaging a client
+- Do NOT use: "I've received your message", "I'll get back to you", "Thank you for reaching out"
+- Vary your wording, be genuine
+- Output ONLY the reply text, nothing else""",
+            userContent = "Conversation:\n$screen\n\nWrite your reply as Nadir (the seller):",
+            maxTokens = 100,
+            onResult = { reply -> injectAndSend(reply) },
+            onError = {}
+        )
     }
 
     private fun injectAndSend(text: String, attempt: Int = 0) {

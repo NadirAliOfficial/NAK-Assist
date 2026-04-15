@@ -16,8 +16,8 @@ class MessageNotificationService : NotificationListenerService() {
         private var lastAwayReplyTime = 0L
         private const val AWAY_REPLY_COOLDOWN_MS = 60_000L
 
-        // Pending reply waiting to be injected once Fiverr is open
-        var pendingAwayReply: String? = null
+        // Set when Away Mode triggers — tells accessibility service to read & reply once Fiverr opens
+        var pendingAwayTrigger = false
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -40,33 +40,16 @@ class MessageNotificationService : NotificationListenerService() {
             if (now - lastAwayReplyTime < AWAY_REPLY_COOLDOWN_MS) return
             lastAwayReplyTime = now
 
-            GroqApiHelper.ask(
-                systemPrompt = """You are a Fiverr freelancer (Nadir Ali Khan) replying to a buyer.
-Write a natural, human-sounding holding reply to let the buyer know you've seen their message and will reply properly soon.
-Rules:
-- Sound like a real person, not a bot or template
-- 1-2 short sentences max
-- Casual but professional tone — like texting a client
-- Vary the wording (don't always start with "Thanks")
-- No filler phrases like "I've received your message" or "I'll get back to you shortly"
-- Output ONLY the reply, nothing else""",
-                userContent = "Buyer's message: $text",
-                maxTokens = 80,
-                onResult = { reply ->
-                    // Store reply, then open Fiverr to the conversation
-                    pendingAwayReply = reply
-                    try {
-                        sbn.notification.contentIntent?.send(applicationContext, 0, null)
-                    } catch (_: Exception) {
-                        // Fallback: open Fiverr main screen
-                        applicationContext.packageManager
-                            .getLaunchIntentForPackage(sbn.packageName)
-                            ?.apply { addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK) }
-                            ?.let { applicationContext.startActivity(it) }
-                    }
-                },
-                onError = {}
-            )
+            // Open Fiverr conversation first — accessibility service will read context & reply
+            pendingAwayTrigger = true
+            try {
+                sbn.notification.contentIntent?.send(applicationContext, 0, null)
+            } catch (_: Exception) {
+                applicationContext.packageManager
+                    .getLaunchIntentForPackage(sbn.packageName)
+                    ?.apply { addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK) }
+                    ?.let { applicationContext.startActivity(it) }
+            }
         }
 
         showSystemNotification(title, text)
