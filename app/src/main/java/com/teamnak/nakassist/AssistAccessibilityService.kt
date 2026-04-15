@@ -37,8 +37,8 @@ class AssistAccessibilityService : AccessibilityService() {
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
             MessageNotificationService.pendingAwayTrigger) {
             MessageNotificationService.pendingAwayTrigger = false
-            // Wait 2s for conversation to fully load, then read context & generate reply
-            handler.postDelayed({ generateAwayReplyFromScreen() }, 2000)
+            // Wait for conversation to load, then generate reply
+            handler.postDelayed({ waitForConversationAndReply(0) }, 2000)
             return
         }
 
@@ -56,7 +56,22 @@ class AssistAccessibilityService : AccessibilityService() {
         }.also { handler.postDelayed(it, 1500) }
     }
 
-    private fun generateAwayReplyFromScreen() {
+    private fun waitForConversationAndReply(attempt: Int) {
+        val screen = readScreen()
+        // Check that screen has actual conversation content (messages visible)
+        val hasMessages = screen != null &&
+            screen.lines().count { it.isNotBlank() } >= 3 &&
+            !screen.contains("Type a message") == false || screen?.contains("Type a message") == true
+
+        if (screen != null && screen.contains("Type a message") && attempt < 8) {
+            generateAwayReplyFromScreen(screen)
+        } else if (attempt < 8) {
+            // Not loaded yet — wait another second and retry
+            handler.postDelayed({ waitForConversationAndReply(attempt + 1) }, 1000)
+        }
+    }
+
+    private fun generateAwayReplyFromScreen(screen: String) {
         val screen = readScreen() ?: return
 
         GroqApiHelper.ask(
