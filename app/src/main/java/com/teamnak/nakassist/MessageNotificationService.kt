@@ -50,9 +50,14 @@ class MessageNotificationService : NotificationListenerService() {
                     // Store reply, then open Fiverr to the conversation
                     pendingAwayReply = reply
                     try {
-                        sbn.notification.contentIntent?.send()
-                    } catch (_: PendingIntent.CanceledException) {}
-                    // AssistAccessibilityService will detect Fiverr opening and inject
+                        sbn.notification.contentIntent?.send(applicationContext, 0, null)
+                    } catch (_: Exception) {
+                        // Fallback: open Fiverr main screen
+                        applicationContext.packageManager
+                            .getLaunchIntentForPackage(sbn.packageName)
+                            ?.apply { addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK) }
+                            ?.let { applicationContext.startActivity(it) }
+                    }
                 },
                 onError = {}
             )

@@ -59,15 +59,17 @@ class AssistAccessibilityService : AccessibilityService() {
         }.also { handler.postDelayed(it, 1500) }
     }
 
-    private fun injectAndSend(text: String) {
-        val root = rootInActiveWindow ?: return
+    private fun injectAndSend(text: String, attempt: Int = 0) {
+        val root = rootInActiveWindow ?: run {
+            if (attempt < 5) handler.postDelayed({ injectAndSend(text, attempt + 1) }, 1000)
+            return
+        }
 
         // Find message input field
         val inputNode = findEditableNode(root)
         if (inputNode == null) {
             root.recycle()
-            // Retry once more after another second
-            handler.postDelayed({ injectAndSend(text) }, 1000)
+            if (attempt < 5) handler.postDelayed({ injectAndSend(text, attempt + 1) }, 1000)
             return
         }
 
