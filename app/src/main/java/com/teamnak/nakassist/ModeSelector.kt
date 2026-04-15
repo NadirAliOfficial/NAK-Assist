@@ -174,7 +174,7 @@ object ModeSelector {
                     else            -> "2-3 sentences max."
                 }
                 Triple(
-                    "Fiverr SELLER replying to BUYER. $lengthGuide Output ONLY the reply.",
+                    "Fiverr SELLER replying to BUYER. $lengthGuide Output ONLY the reply. Never use blocked words: gmail, email, phone, telegram, discord, whatsapp, payment, paypal, crypto, or any URLs/@symbols.",
                     "Conversation:\n$trimmed\n\nYour reply:",
                     100
                 )
