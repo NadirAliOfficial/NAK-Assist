@@ -1,80 +1,136 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="24dp"
-    android:background="#F5F5F5">
+    android:background="#121212">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="NAK Assist"
-        android:textSize="30sp"
-        android:textStyle="bold"
-        android:textColor="#1B5E20"
-        android:layout_marginBottom="4dp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="by Nadir Ali Khan — Team NAK"
-        android:textSize="13sp"
-        android:textColor="#888888"
-        android:layout_marginBottom="40dp" />
-
-    <Button
-        android:id="@+id/btnOverlay"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:text="Grant Overlay Permission"
-        android:backgroundTint="#1B5E20"
-        android:textColor="@android:color/white"
-        android:layout_marginBottom="12dp" />
-
-    <Button
-        android:id="@+id/btnAccessibility"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:text="Enable Accessibility Service"
-        android:backgroundTint="#2E7D32"
-        android:textColor="@android:color/white"
-        android:layout_marginBottom="12dp" />
-
-    <Button
-        android:id="@+id/btnNotification"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:text="Enable Notification Access"
-        android:backgroundTint="#388E3C"
-        android:textColor="@android:color/white"
-        android:layout_marginBottom="12dp" />
-
-    <Button
-        android:id="@+id/btnAwayMode"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:text="💤 Away Mode: OFF"
-        android:backgroundTint="#555555"
-        android:textColor="@android:color/white"
-        android:layout_marginBottom="28dp" />
-
-    <TextView
-        android:id="@+id/tvStatus"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Status: Not ready"
-        android:textSize="13sp"
-        android:textColor="#999999"
-        android:layout_marginBottom="20dp" />
+        android:orientation="vertical"
+        android:padding="24dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="⚡ Tap = Smart Reply  |  ⚡⚡ Double Tap = More Modes"
-        android:textSize="11sp"
-        android:textColor="#AAAAAA"
-        android:gravity="center" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚡ NAK Assist"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#4CAF50"
+            android:layout_marginBottom="4dp" />
 
-</LinearLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="by Nadir Ali Khan — Team NAK"
+            android:textSize="13sp"
+            android:textColor="#888888"
+            android:layout_marginBottom="32dp" />
+
+        <!-- Permissions -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SETUP"
+            android:textSize="11sp"
+            android:textColor="#666666"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Grant Overlay Permission"
+            android:backgroundTint="#1B5E20"
+            android:textColor="@android:color/white"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnAccessibility"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Enable Accessibility Service"
+            android:backgroundTint="#2E7D32"
+            android:textColor="@android:color/white"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnNotification"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Enable Notification Access"
+            android:backgroundTint="#388E3C"
+            android:textColor="@android:color/white"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnAwayMode"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="💤 Away Mode: OFF"
+            android:backgroundTint="#555555"
+            android:textColor="@android:color/white"
+            android:layout_marginBottom="24dp" />
+
+        <!-- API Keys -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="GROQ API KEYS"
+            android:textSize="11sp"
+            android:textColor="#666666"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Get free keys at console.groq.com — enter one per line (up to 3 for rotation)"
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etApiKeys"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="gsk_..."
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555555"
+            android:background="#1E1E1E"
+            android:padding="12dp"
+            android:textSize="13sp"
+            android:inputType="textMultiLine"
+            android:minLines="3"
+            android:maxLines="5"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnSaveKeys"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Save API Keys"
+            android:backgroundTint="#1565C0"
+            android:textColor="@android:color/white"
+            android:layout_marginBottom="24dp" />
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Status: Not ready"
+            android:textSize="13sp"
+            android:textColor="#888888"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚡ Tap = Smart Reply  |  ⚡⚡ Double Tap = More Modes"
+            android:textSize="11sp"
+            android:textColor="#555555"
+            android:gravity="center" />
+
+    </LinearLayout>
+</ScrollView>

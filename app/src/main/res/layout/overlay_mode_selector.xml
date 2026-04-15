@@ -157,11 +157,6 @@
                     android:textColor="@android:color/white"/>
             </LinearLayout>
 
-            <!-- Settings -->
-            <Button android:id="@+id/btnSettings" android:layout_width="match_parent"
-                android:layout_height="44dp" android:text="⚙ API Keys"
-                android:backgroundTint="#333333" android:textColor="@android:color/white"
-                android:textSize="13sp"/>
 
         </LinearLayout>
     </ScrollView>

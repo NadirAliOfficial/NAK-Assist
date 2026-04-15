@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -45,6 +46,17 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this,
                 if (on) "Away Mode ON — auto-replies enabled" else "Away Mode OFF",
                 Toast.LENGTH_SHORT).show()
+        }
+
+        // API Keys
+        val etKeys = findViewById<EditText>(R.id.etApiKeys)
+        etKeys.setText(GroqApiHelper.getSavedKeys(this).replace(",", "\n"))
+        findViewById<Button>(R.id.btnSaveKeys).setOnClickListener {
+            val keys = etKeys.text.toString()
+                .split("\n").map { it.trim() }.filter { it.isNotEmpty() }
+                .joinToString(",")
+            GroqApiHelper.saveKeys(this, keys)
+            Toast.makeText(this, "✅ Keys saved", Toast.LENGTH_SHORT).show()
         }
 
         updateStatus()

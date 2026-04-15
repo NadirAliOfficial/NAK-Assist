@@ -173,11 +173,6 @@ object ModeSelector {
                 }
             }
 
-            view.findViewById<Button>(R.id.btnSettings).setOnClickListener {
-                dismiss()
-                showApiKeySettings(context)
-            }
-
             selectorView = view
             windowManager?.addView(view, params)
         }
