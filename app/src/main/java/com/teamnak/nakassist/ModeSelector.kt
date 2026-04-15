@@ -60,6 +60,58 @@ object ModeSelector {
                 }
             }
 
+            // Auto-refresh toggle
+            val btnAutoRefresh = view.findViewById<Button>(R.id.btnAutoRefreshToggle)
+            val service = service
+            fun updateAutoRefreshBtn() {
+                val on = AssistAccessibilityService.autoRefreshEnabled
+                val secs = AssistAccessibilityService.autoRefreshInterval
+                btnAutoRefresh.text = if (on) "🔄 Auto-Refresh: ON (${secs}s)" else "🔄 Auto-Refresh: OFF"
+                btnAutoRefresh.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                    if (on) android.graphics.Color.parseColor("#1565C0")
+                    else android.graphics.Color.parseColor("#555555")
+                )
+            }
+            updateAutoRefreshBtn()
+            btnAutoRefresh.setOnClickListener {
+                val svc = AssistAccessibilityService.instance
+                if (AssistAccessibilityService.autoRefreshEnabled) {
+                    svc?.stopAutoRefresh()
+                } else {
+                    svc?.startAutoRefresh()
+                }
+                updateAutoRefreshBtn()
+            }
+
+            // Interval buttons
+            val intervals = mapOf(
+                R.id.btnInterval5  to 5,
+                R.id.btnInterval10 to 10,
+                R.id.btnInterval30 to 30,
+                R.id.btnInterval60 to 60
+            )
+            fun updateIntervalButtons() {
+                intervals.forEach { (id, secs) ->
+                    val btn = view.findViewById<Button>(id)
+                    btn.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                        if (AssistAccessibilityService.autoRefreshInterval == secs)
+                            android.graphics.Color.parseColor("#1565C0")
+                        else android.graphics.Color.parseColor("#333333")
+                    )
+                }
+            }
+            updateIntervalButtons()
+            intervals.forEach { (id, secs) ->
+                view.findViewById<Button>(id).setOnClickListener {
+                    AssistAccessibilityService.autoRefreshInterval = secs
+                    if (AssistAccessibilityService.autoRefreshEnabled) {
+                        AssistAccessibilityService.instance?.startAutoRefresh()
+                    }
+                    updateIntervalButtons()
+                    updateAutoRefreshBtn()
+                }
+            }
+
             // Away Mode toggle
             val btnAway = view.findViewById<Button>(R.id.btnAwayModeToggle)
             btnAway.text = if (MessageNotificationService.awayMode) "💤 Away Mode: ON" else "💤 Away Mode: OFF"

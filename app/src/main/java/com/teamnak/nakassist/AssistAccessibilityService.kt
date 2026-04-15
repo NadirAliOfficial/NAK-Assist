@@ -11,11 +11,15 @@ class AssistAccessibilityService : AccessibilityService() {
     companion object {
         var instance: AssistAccessibilityService? = null
         private val FIVERR_PACKAGES = setOf("com.fiverr.fiverr", "com.fiverr.android")
+
+        var autoRefreshEnabled = false
+        var autoRefreshInterval = 10 // seconds
     }
 
     private val handler = Handler(Looper.getMainLooper())
     private var flashDebounce: Runnable? = null
     private var lastScreenHash = 0
+    private var autoRefreshRunnable: Runnable? = null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -104,13 +108,47 @@ class AssistAccessibilityService : AccessibilityService() {
         return parts.joinToString("\n")
     }
 
+    fun startAutoRefresh() {
+        stopAutoRefresh()
+        autoRefreshEnabled = true
+        scheduleNextRefresh()
+    }
+
+    fun stopAutoRefresh() {
+        autoRefreshEnabled = false
+        autoRefreshRunnable?.let { handler.removeCallbacks(it) }
+        autoRefreshRunnable = null
+    }
+
+    private fun scheduleNextRefresh() {
+        if (!autoRefreshEnabled) return
+        autoRefreshRunnable = Runnable {
+            val screen = readScreen()
+            if (screen != null) {
+                val hash = screen.hashCode()
+                if (hash != lastScreenHash) {
+                    lastScreenHash = hash
+                    FloatingButtonManager.flash()
+                    if (MessageNotificationService.awayMode) {
+                        MessageNotificationService.sendAwayReply(this, screen)
+                    }
+                }
+            }
+            if (autoRefreshEnabled) scheduleNextRefresh()
+        }.also {
+            handler.postDelayed(it, autoRefreshInterval * 1000L)
+        }
+    }
+
     override fun onInterrupt() {
+        stopAutoRefresh()
         OverlayManager.dismiss()
         ModeSelector.dismiss()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        stopAutoRefresh()
         instance = null
         FloatingButtonManager.dismiss()
         OverlayManager.dismiss()

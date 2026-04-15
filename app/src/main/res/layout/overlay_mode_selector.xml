@@ -96,6 +96,29 @@
                     android:textColor="@android:color/white" android:textSize="12sp"/>
             </LinearLayout>
 
+            <!-- Auto-Refresh -->
+            <Button android:id="@+id/btnAutoRefreshToggle" android:layout_width="match_parent"
+                android:layout_height="44dp" android:text="🔄 Auto-Refresh: OFF"
+                android:backgroundTint="#555555" android:textColor="@android:color/white"
+                android:textSize="13sp" android:layout_marginBottom="6dp"/>
+
+            <!-- Interval picker -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginBottom="8dp">
+                <Button android:id="@+id/btnInterval5" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="36dp" android:text="5s" android:backgroundTint="#333333"
+                    android:textColor="@android:color/white" android:textSize="12sp" android:layout_marginEnd="4dp"/>
+                <Button android:id="@+id/btnInterval10" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="36dp" android:text="10s" android:backgroundTint="#1565C0"
+                    android:textColor="@android:color/white" android:textSize="12sp" android:layout_marginEnd="4dp"/>
+                <Button android:id="@+id/btnInterval30" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="36dp" android:text="30s" android:backgroundTint="#333333"
+                    android:textColor="@android:color/white" android:textSize="12sp" android:layout_marginEnd="4dp"/>
+                <Button android:id="@+id/btnInterval60" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="36dp" android:text="60s" android:backgroundTint="#333333"
+                    android:textColor="@android:color/white" android:textSize="12sp"/>
+            </LinearLayout>
+
             <!-- Away Mode -->
             <Button android:id="@+id/btnAwayModeToggle" android:layout_width="match_parent"
                 android:layout_height="44dp" android:text="💤 Away Mode: OFF"
