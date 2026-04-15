@@ -98,7 +98,7 @@ Style rules:
         args.putCharSequence(android.view.accessibility.AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
         inputNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_SET_TEXT, args)
 
-        // Click the Send button (visible "Send" text button bottom-right of input)
+        // Click Send button
         handler.postDelayed({
             val r = rootInActiveWindow
             if (r != null) {
@@ -109,6 +109,12 @@ Style rules:
                 r.recycle()
             }
             inputNode.recycle()
+
+            // Go home after 1.5s so Fiverr goes to background
+            // — without this, Fiverr won't send notifications for the next message
+            handler.postDelayed({
+                performGlobalAction(GLOBAL_ACTION_HOME)
+            }, 1500)
         }, 600)
 
         root.recycle()
