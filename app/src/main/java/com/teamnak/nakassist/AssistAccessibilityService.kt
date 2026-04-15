@@ -87,8 +87,8 @@ Style:
 - No filler phrases
 
 Portfolio: if the buyer asks for past work, examples, or portfolio — mention:
-Website: theteamnak.com
-GitHub: github.com/NadirAliOfficial
+Website: https://www.theteamnak.com
+GitHub: https://github.com/NadirAliOfficial
 
 IMPORTANT — Fiverr blocks these, never use them:
 - gmail, yahoo, email, phone, number, call, skype, zoom, telegram, discord, whatsapp, slack
