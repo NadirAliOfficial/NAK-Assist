@@ -74,7 +74,7 @@ Style rules:
 - No filler, no corporate speak
 - Output ONLY the reply, nothing else""",
             userContent = "Conversation:\n$screen\n\nWrite Nadir's reply:",
-            maxTokens = 100,
+            maxTokens = 80,
             onResult = { reply -> injectAndSend(reply) },
             onError = {}
         )
@@ -237,7 +237,7 @@ Style rules:
         val root = rootInActiveWindow ?: return null
         val text = extractText(root)
         root.recycle()
-        return if (text.isBlank()) null else text.take(2000)
+        return if (text.isBlank()) null else text.takeLast(1200) // last 1200 chars = most recent messages
     }
 
     private fun extractText(node: AccessibilityNodeInfo): String {

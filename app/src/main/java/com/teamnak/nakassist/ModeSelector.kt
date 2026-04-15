@@ -162,59 +162,60 @@ object ModeSelector {
     ) {
         val canPaste = mode !in listOf("summarize")
 
+        // Trim input to reduce token usage — take last portion (most recent/relevant)
+        val trimmed = screenText.takeLast(800)
+
         val (system, user, tokens) = when (mode) {
             "smartreply" -> {
                 val lastMsgLen = screenText.lines().lastOrNull { it.isNotBlank() }?.length ?: 50
                 val lengthGuide = when {
-                    lastMsgLen < 20 -> "Reply with 1 short sentence only."
-                    lastMsgLen < 80 -> "Keep the reply to 1–2 sentences."
-                    else            -> "Keep the reply to 2–3 sentences max."
+                    lastMsgLen < 20 -> "1 sentence only."
+                    lastMsgLen < 80 -> "1-2 sentences."
+                    else            -> "2-3 sentences max."
                 }
                 Triple(
-                    "You are a professional Fiverr SELLER (freelancer). The person messaging you is the BUYER (client). " +
-                    "Write the next message FROM YOU (the seller) in response to the buyer's last message. " +
-                    "$lengthGuide Stay on the topics discussed. Output ONLY the reply text — no labels, no explanations.",
-                    "Fiverr conversation:\n$screenText\n\nWrite your reply as the seller:",
-                    150
+                    "Fiverr SELLER replying to BUYER. $lengthGuide Output ONLY the reply.",
+                    "Conversation:\n$trimmed\n\nYour reply:",
+                    100
                 )
             }
             "summarize" -> Triple(
-                "Summarize in 3–5 short bullet points. Be brief and clear.",
-                screenText, 150
+                "Summarize in 3-5 bullet points. Be concise.",
+                trimmed, 120
             )
             "improve" -> Triple(
-                "Improve the clarity, grammar, and flow of the text in <input> tags. Keep the same meaning, tone, length, and speaker perspective. Output ONLY the improved text.",
-                "<input>$screenText</input>", 200
+                "Improve clarity and flow of text in <i> tags. Keep same meaning and length. Output ONLY result.",
+                "<i>$trimmed</i>", 150
             )
             "rewrite" -> Triple(
-                "Rephrase the text in <input> tags using different wording. Keep the same meaning, length, and speaker perspective. Output ONLY the rewritten text.",
-                "<input>$screenText</input>", 200
+                "Rephrase text in <i> tags differently. Keep same meaning and length. Output ONLY result.",
+                "<i>$trimmed</i>", 150
             )
             "shorten" -> Triple(
-                "Shorten the text in <input> tags. Keep the core meaning and speaker's voice. Output ONLY the shortened text.",
-                "<input>$screenText</input>", 100
+                "Shorten text in <i> tags. Keep core meaning. Output ONLY result.",
+                "<i>$trimmed</i>", 80
             )
             "proofread" -> Triple(
-                "Fix all grammar, spelling, and punctuation in the text in <input> tags. Do not change wording or style. Output ONLY the corrected text.",
-                "<input>$screenText</input>", 200
+                "Fix grammar and spelling in <i> tags. Don't change wording. Output ONLY result.",
+                "<i>$trimmed</i>", 150
             )
             "professional" -> Triple(
-                "Rewrite the text in <input> tags to sound formal and professional. Keep the same meaning and length. Output ONLY the rewritten text.",
-                "<input>$screenText</input>", 200
+                "Make text in <i> tags formal and professional. Keep same meaning. Output ONLY result.",
+                "<i>$trimmed</i>", 150
             )
             "friendly" -> Triple(
-                "Rewrite the text in <input> tags to sound warm and conversational. Keep the same meaning and length. Output ONLY the rewritten text.",
-                "<input>$screenText</input>", 200
+                "Make text in <i> tags warm and conversational. Keep same meaning. Output ONLY result.",
+                "<i>$trimmed</i>", 150
             )
             "translate" -> Triple(
-                "Detect the language of the text in <input> tags. If it is not English, translate it to English. If it is already English, translate it to Spanish. Output ONLY the translation.",
-                "<input>$screenText</input>", 200
+                "Translate text in <i> tags: non-English→English, English→Spanish. Output ONLY translation.",
+                "<i>$trimmed</i>", 150
             )
             "custom" -> Triple(
-                "You are a smart AI assistant. Follow the user's instruction exactly. Output ONLY the result, no explanation.",
-                "Instruction: $customCmd\n\nContent:\n$screenText", 200
+                "Follow the instruction exactly. Output ONLY the result.",
+                "Instruction: $customCmd\n\nText:\n$trimmed", 150
             )
-            else -> Triple("", screenText, 150)
+            else -> Triple("", trimmed, 120)
         }
 
         OverlayManager.showLoading(context, "Working...")
