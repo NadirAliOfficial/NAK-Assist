@@ -56,6 +56,12 @@ class AssistAccessibilityService : AccessibilityService() {
         }.also { handler.postDelayed(it, 1500) }
     }
 
+    private fun fixLinks(text: String): String {
+        return text
+            .replace(Regex("(?<!https?://)(?<!/)\\b(github\\.com)")) { "https://${it.value}" }
+            .replace(Regex("(?<!https?://)(?<!/)\\b(theteamnak\\.com)")) { "https://www.${it.value}" }
+    }
+
     private fun waitForConversationAndReply(attempt: Int) {
         val screen = readScreen()
         // Check that screen has actual conversation content (messages visible)
@@ -102,7 +108,7 @@ IMPORTANT — Fiverr blocks these, never use them:
 Output ONLY the reply text, nothing else.""",
             userContent = "Conversation:\n$screen\n\nWrite Nadir's reply:",
             maxTokens = 80,
-            onResult = { reply -> injectAndSend(reply) },
+            onResult = { reply -> injectAndSend(fixLinks(reply)) },
             onError = {}
         )
     }
