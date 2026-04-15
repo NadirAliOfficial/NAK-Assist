@@ -72,7 +72,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="⚡ Tap = Smart Reply  |  ⚡⚡ Double = Summarize  |  Hold = More Modes"
+        android:text="⚡ Tap = Smart Reply  |  ⚡⚡ Double Tap = More Modes"
         android:textSize="11sp"
         android:textColor="#AAAAAA"
         android:gravity="center" />
