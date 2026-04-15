@@ -86,7 +86,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Get free keys at console.groq.com — enter one per line (up to 3 for rotation)"
+            android:text="Get free keys at console.groq.com — enter one per line, no limit"
             android:textSize="12sp"
             android:textColor="#888888"
             android:layout_marginBottom="8dp" />
@@ -103,7 +103,7 @@
             android:textSize="13sp"
             android:inputType="textMultiLine"
             android:minLines="3"
-            android:maxLines="5"
+            android:maxLines="20"
             android:layout_marginBottom="8dp" />
 
         <Button
