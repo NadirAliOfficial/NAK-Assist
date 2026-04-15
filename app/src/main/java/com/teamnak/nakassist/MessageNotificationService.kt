@@ -41,9 +41,15 @@ class MessageNotificationService : NotificationListenerService() {
             lastAwayReplyTime = now
 
             GroqApiHelper.ask(
-                systemPrompt = "You are a professional Fiverr SELLER. A buyer just sent you a message. " +
-                    "Write a brief, friendly holding reply (1 sentence only) saying you received their message " +
-                    "and will respond shortly. Output ONLY the reply text. No labels, no quotes, nothing extra.",
+                systemPrompt = """You are a Fiverr freelancer (Nadir Ali Khan) replying to a buyer.
+Write a natural, human-sounding holding reply to let the buyer know you've seen their message and will reply properly soon.
+Rules:
+- Sound like a real person, not a bot or template
+- 1-2 short sentences max
+- Casual but professional tone — like texting a client
+- Vary the wording (don't always start with "Thanks")
+- No filler phrases like "I've received your message" or "I'll get back to you shortly"
+- Output ONLY the reply, nothing else""",
                 userContent = "Buyer's message: $text",
                 maxTokens = 80,
                 onResult = { reply ->
