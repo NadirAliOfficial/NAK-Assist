@@ -77,19 +77,15 @@ class AssistAccessibilityService : AccessibilityService() {
         args.putCharSequence(android.view.accessibility.AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
         inputNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_SET_TEXT, args)
 
-        // Try IME action first (most reliable — same as pressing Send on keyboard)
-        // Fall back to finding the send button by searching siblings
+        // Click the Send button (visible "Send" text button bottom-right of input)
         handler.postDelayed({
-            val sent = inputNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_IME_ACTION)
-            if (!sent) {
-                val r = rootInActiveWindow
-                if (r != null) {
-                    findSendButton(r, inputNode)?.let { btn ->
-                        btn.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
-                        btn.recycle()
-                    }
-                    r.recycle()
+            val r = rootInActiveWindow
+            if (r != null) {
+                findSendButton(r, inputNode)?.let { btn ->
+                    btn.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
+                    btn.recycle()
                 }
+                r.recycle()
             }
             inputNode.recycle()
         }, 600)
