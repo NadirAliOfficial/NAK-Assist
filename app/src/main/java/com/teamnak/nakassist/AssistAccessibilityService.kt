@@ -110,16 +110,13 @@ Style rules:
             }
             inputNode.recycle()
 
-            // Navigate back twice: conversation → inbox → background
-            // Pauses Stay Online gesture so it doesn't accidentally tap something
+            // Go back once: conversation → Fiverr inbox
+            // Inbox is enough — Fiverr sends notifications when you're not inside the conversation
             handler.postDelayed({
                 val wasOnline = stayOnlineEnabled
                 if (wasOnline) stopStayOnline()
                 performGlobalAction(GLOBAL_ACTION_BACK)
-                handler.postDelayed({
-                    performGlobalAction(GLOBAL_ACTION_BACK)
-                    if (wasOnline) handler.postDelayed({ startStayOnline() }, 1000)
-                }, 600)
+                if (wasOnline) handler.postDelayed({ startStayOnline() }, 1000)
             }, 1500)
         }, 600)
 
