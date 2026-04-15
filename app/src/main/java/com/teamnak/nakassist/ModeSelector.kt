@@ -18,9 +18,16 @@ object ModeSelector {
     private var selectorView: android.view.View? = null
     private val handler = Handler(Looper.getMainLooper())
 
+    private fun dismissInternal() {
+        selectorView?.let {
+            try { windowManager?.removeView(it) } catch (_: Exception) {}
+        }
+        selectorView = null
+    }
+
     fun show(context: Context, screenText: String, service: AssistAccessibilityService) {
         handler.post {
-            dismiss()
+            dismissInternal()
             windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
             val view = LayoutInflater.from(context).inflate(R.layout.overlay_mode_selector, null)
 
@@ -227,6 +234,7 @@ object ModeSelector {
 
     private fun showTemplates(context: Context, service: AssistAccessibilityService) {
         handler.post {
+            dismissInternal()
             windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
             val view = LayoutInflater.from(context).inflate(R.layout.overlay_templates, null)
 
@@ -268,11 +276,6 @@ object ModeSelector {
     }
 
     fun dismiss() {
-        handler.post {
-            selectorView?.let {
-                try { windowManager?.removeView(it) } catch (_: Exception) {}
-            }
-            selectorView = null
-        }
+        handler.post { dismissInternal() }
     }
 }
