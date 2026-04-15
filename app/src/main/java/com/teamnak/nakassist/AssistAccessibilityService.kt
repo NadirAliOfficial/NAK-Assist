@@ -106,14 +106,15 @@ class AssistAccessibilityService : AccessibilityService() {
         return null
     }
 
-    // Find a clickable button that is a sibling or near the input field
+    // Find the Send button — Fiverr shows a "Send" text button bottom-right of input
     private fun findSendButton(root: AccessibilityNodeInfo, inputNode: AccessibilityNodeInfo): AccessibilityNodeInfo? {
-        // Try by content description
-        for (desc in listOf("Send", "Send message", "send", "submit")) {
-            val nodes = root.findAccessibilityNodeInfosByText(desc)
-            if (nodes.isNotEmpty()) return nodes[0]
+        // Search by text "Send", only return if clickable (avoids matching message bubbles)
+        val nodes = root.findAccessibilityNodeInfosByText("Send")
+        for (node in nodes) {
+            if (node.isClickable) return node
+            node.recycle()
         }
-        // Try: find input's parent, then look for last clickable sibling
+        // Fallback: get input's parent row, take last clickable non-editable child
         val parent = inputNode.parent ?: return null
         for (i in parent.childCount - 1 downTo 0) {
             val child = parent.getChild(i) ?: continue
