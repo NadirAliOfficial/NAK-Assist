@@ -32,6 +32,19 @@ class AssistAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         val pkg = event.packageName?.toString() ?: return
         if (pkg !in FIVERR_PACKAGES) return
+
+        // When Fiverr conversation screen opens, inject pending away reply
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+            event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+            val pending = MessageNotificationService.pendingAwayReply
+            if (pending != null) {
+                MessageNotificationService.pendingAwayReply = null
+                // Wait 1.5s for Fiverr's UI to fully load, then inject + send
+                handler.postDelayed({ injectAndSend(pending) }, 1500)
+                return
+            }
+        }
+
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
             event.eventType != AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) return
 
@@ -44,6 +57,56 @@ class AssistAccessibilityService : AccessibilityService() {
                 FloatingButtonManager.flash()
             }
         }.also { handler.postDelayed(it, 1500) }
+    }
+
+    private fun injectAndSend(text: String) {
+        val root = rootInActiveWindow ?: return
+
+        // Find message input field
+        val inputNode = findEditableNode(root)
+        if (inputNode == null) {
+            root.recycle()
+            // Retry once more after another second
+            handler.postDelayed({ injectAndSend(text) }, 1000)
+            return
+        }
+
+        val args = android.os.Bundle()
+        args.putCharSequence(android.view.accessibility.AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+        inputNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+        inputNode.recycle()
+
+        // Click Send button after text is set
+        handler.postDelayed({
+            val r = rootInActiveWindow ?: return@postDelayed
+            findSendButton(r)?.let { btn ->
+                btn.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
+                btn.recycle()
+            }
+            r.recycle()
+        }, 600)
+
+        root.recycle()
+    }
+
+    private fun findEditableNode(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        if (node.isEditable) return node
+        for (i in 0 until node.childCount) {
+            val result = findEditableNode(node.getChild(i) ?: continue)
+            if (result != null) return result
+        }
+        return null
+    }
+
+    private fun findSendButton(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        val desc = node.contentDescription?.toString()?.lowercase() ?: ""
+        val text = node.text?.toString()?.lowercase() ?: ""
+        if (node.isClickable && (desc.contains("send") || text == "send")) return node
+        for (i in 0 until node.childCount) {
+            val result = findSendButton(node.getChild(i) ?: continue)
+            if (result != null) return result
+        }
+        return null
     }
 
     // ── Stay Online ──────────────────────────────────────────────────────────
