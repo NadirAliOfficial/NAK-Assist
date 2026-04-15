@@ -221,8 +221,11 @@ class AssistAccessibilityService : AccessibilityService() {
 
     private fun extractText(node: AccessibilityNodeInfo): String {
         val parts = mutableListOf<String>()
+        // Skip our own overlay package to avoid contaminating screen text
+        val ownPkg = packageName
         fun traverse(n: AccessibilityNodeInfo?) {
             n ?: return
+            if (n.packageName?.toString() == ownPkg) return
             val t = n.text?.toString()?.trim()
             if (!t.isNullOrEmpty()) parts.add(t)
             for (i in 0 until n.childCount) traverse(n.getChild(i))

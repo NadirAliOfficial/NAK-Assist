@@ -14,7 +14,7 @@ class MessageNotificationService : NotificationListenerService() {
         var awayMode = false
         private val FIVERR_PACKAGES = setOf("com.fiverr.fiverr", "com.fiverr.android")
         private var lastAwayReplyTime = 0L
-        private const val AWAY_REPLY_COOLDOWN_MS = 30_000L
+        private const val AWAY_REPLY_COOLDOWN_MS = 60_000L
 
         // Pending reply waiting to be injected once Fiverr is open
         var pendingAwayReply: String? = null
@@ -42,8 +42,8 @@ class MessageNotificationService : NotificationListenerService() {
 
             GroqApiHelper.ask(
                 systemPrompt = "You are a professional Fiverr SELLER. A buyer just sent you a message. " +
-                    "Write a brief, friendly holding reply (1–2 sentences) saying you received their message " +
-                    "and will respond shortly. Output ONLY the reply text.",
+                    "Write a brief, friendly holding reply (1 sentence only) saying you received their message " +
+                    "and will respond shortly. Output ONLY the reply text. No labels, no quotes, nothing extra.",
                 userContent = "Buyer's message: $text",
                 maxTokens = 80,
                 onResult = { reply ->
