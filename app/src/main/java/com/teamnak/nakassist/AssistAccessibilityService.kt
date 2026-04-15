@@ -52,6 +52,7 @@ class AssistAccessibilityService : AccessibilityService() {
         stopStayOnline()
         stayOnlineEnabled = true
         FloatingButtonManager.setKeepScreenOn(true)
+        FloatingButtonManager.startCountdown(stayOnlineInterval)
         scheduleNextPing()
     }
 
@@ -60,15 +61,18 @@ class AssistAccessibilityService : AccessibilityService() {
         stayOnlineRunnable?.let { handler.removeCallbacks(it) }
         stayOnlineRunnable = null
         FloatingButtonManager.setKeepScreenOn(false)
+        FloatingButtonManager.stopCountdown()
     }
 
     private fun scheduleNextPing() {
         if (!stayOnlineEnabled) return
         stayOnlineRunnable = Runnable {
-            // Temporarily pause flash debounce so the gesture doesn't trigger a flash
             flashDebounce?.let { handler.removeCallbacks(it) }
             performStayOnlineGesture()
-            if (stayOnlineEnabled) scheduleNextPing()
+            if (stayOnlineEnabled) {
+                FloatingButtonManager.startCountdown(stayOnlineInterval)
+                scheduleNextPing()
+            }
         }.also {
             handler.postDelayed(it, stayOnlineInterval * 1000L)
         }

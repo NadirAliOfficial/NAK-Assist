@@ -16,6 +16,8 @@ object FloatingButtonManager {
     private var buttonView: TextView? = null
     private val handler = Handler(Looper.getMainLooper())
     private var lastTapTime = 0L
+    private var countdownRunnable: Runnable? = null
+    private var countdownSeconds = 0
 
     fun show(context: Context) {
         if (buttonView != null) return
@@ -131,6 +133,27 @@ object FloatingButtonManager {
             }
             buttonView?.text = if (on) "💤" else "⚡"
         }
+    }
+
+    fun startCountdown(intervalSeconds: Int) {
+        stopCountdown()
+        countdownSeconds = intervalSeconds
+        countdownRunnable = object : Runnable {
+            override fun run() {
+                if (countdownSeconds <= 0) {
+                    countdownSeconds = intervalSeconds
+                }
+                buttonView?.text = "$countdownSeconds"
+                countdownSeconds--
+                handler.postDelayed(this, 1000)
+            }
+        }.also { handler.post(it) }
+    }
+
+    fun stopCountdown() {
+        countdownRunnable?.let { handler.removeCallbacks(it) }
+        countdownRunnable = null
+        buttonView?.text = if (MessageNotificationService.awayMode) "💤" else "⚡"
     }
 
     fun setKeepScreenOn(on: Boolean) {
