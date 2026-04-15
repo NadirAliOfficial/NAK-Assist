@@ -14,7 +14,7 @@ class MessageNotificationService : NotificationListenerService() {
         var awayMode = false
         private val FIVERR_PACKAGES = setOf("com.fiverr.fiverr", "com.fiverr.android")
         private var lastAwayReplyTime = 0L
-        private const val AWAY_REPLY_COOLDOWN_MS = 60_000L
+        private const val AWAY_REPLY_COOLDOWN_MS = 20_000L
 
         // Set when Away Mode triggers — tells accessibility service to read & reply once Fiverr opens
         var pendingAwayTrigger = false

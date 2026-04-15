@@ -185,15 +185,12 @@ Style rules:
     private fun performStayOnlineGesture() {
         val metrics = resources.displayMetrics
         val cx = metrics.widthPixels / 2f
-        val cy = metrics.heightPixels / 2f
+        // Use top 8% of screen — status bar / title area, nothing clickable there
+        val cy = metrics.heightPixels * 0.08f
 
-        // Tiny 4px swipe down then back up — invisible but counts as activity
-        val down = Path().apply { moveTo(cx, cy); lineTo(cx, cy + 4f) }
-        val up   = Path().apply { moveTo(cx, cy + 4f); lineTo(cx, cy) }
-
+        val path = Path().apply { moveTo(cx, cy); lineTo(cx, cy + 2f) }
         val gesture = GestureDescription.Builder()
-            .addStroke(GestureDescription.StrokeDescription(down, 0,   80))
-            .addStroke(GestureDescription.StrokeDescription(up,   100, 80))
+            .addStroke(GestureDescription.StrokeDescription(path, 0, 50))
             .build()
 
         dispatchGesture(gesture, null, null)
