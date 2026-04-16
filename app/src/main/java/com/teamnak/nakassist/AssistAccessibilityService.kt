@@ -199,13 +199,18 @@ Output ONLY the reply."""
             return
         }
 
-        val args = android.os.Bundle()
-        args.putCharSequence(android.view.accessibility.AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
-        inputNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+        // Focus input first
+        inputNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_FOCUS)
+
+        // Copy text to clipboard and paste — this triggers React Native's onChange
+        // so the Send button becomes enabled (ACTION_SET_TEXT bypasses RN's event system)
+        val clipboard = getSystemService(android.content.ClipboardManager::class.java)
+        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("reply", text))
+        inputNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_PASTE)
         inputNode.recycle()
         root.recycle()
 
-        // Click Send — use fresh nodes so nothing is stale
+        // Click Send after paste has time to register
         handler.postDelayed({
             val r2 = rootInActiveWindow
             if (r2 != null) {
@@ -217,8 +222,7 @@ Output ONLY the reply."""
                         btn.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
                         btn.recycle()
                     } else {
-                        // Fallback: IME action (keyboard send)
-                        freshInput.performAction(0x00000200)
+                        freshInput.performAction(0x00000200) // IME action fallback
                         android.util.Log.e("NAK", "Send btn not found — tried IME action")
                     }
                     freshInput.recycle()

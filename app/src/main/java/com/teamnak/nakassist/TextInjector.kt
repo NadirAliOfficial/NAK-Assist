@@ -11,9 +11,10 @@ object TextInjector {
         root.recycle()
 
         if (inputNode != null) {
-            val args = Bundle()
-            args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
-            val success = inputNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+            inputNode.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+            val clipboard = service.getSystemService(android.content.ClipboardManager::class.java)
+            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("reply", text))
+            val success = inputNode.performAction(AccessibilityNodeInfo.ACTION_PASTE)
             inputNode.recycle()
             return success
         }
