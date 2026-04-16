@@ -183,19 +183,11 @@ object ModeSelector {
         val trimmed = screenText.takeLast(3000)
 
         val (system, user, tokens) = when (mode) {
-            "smartreply" -> {
-                val lastMsgLen = screenText.lines().lastOrNull { it.isNotBlank() }?.length ?: 50
-                val lengthGuide = when {
-                    lastMsgLen < 20 -> "1 sentence only."
-                    lastMsgLen < 80 -> "1-2 sentences."
-                    else            -> "2-3 sentences max."
-                }
-                Triple(
-                    "Fiverr SELLER replying to BUYER. $lengthGuide Output ONLY the reply. Never use blocked words: gmail, email, phone, telegram, discord, whatsapp, payment, paypal, crypto, or any URLs/@symbols.",
-                    "Conversation:\n$trimmed\n\nYour reply:",
-                    100
-                )
-            }
+            "smartreply" -> Triple(
+                service.personaPrompt(),
+                "Conversation:\n$trimmed\n\nWrite Nadir's reply:",
+                150
+            )
             "summarize" -> Triple(
                 "Summarize in 3-5 bullet points. Be concise.",
                 trimmed, 120
@@ -230,7 +222,8 @@ object ModeSelector {
             userContent = user,
             maxTokens = tokens,
             onResult = { result ->
-                OverlayManager.show(context, result, showPaste = canPaste) { text ->
+                val cleaned = if (mode == "smartreply") service.fixLinks(result.trim()) else result
+                OverlayManager.show(context, cleaned, showPaste = canPaste) { text ->
                     TextInjector.inject(service, text)
                 }
             },
