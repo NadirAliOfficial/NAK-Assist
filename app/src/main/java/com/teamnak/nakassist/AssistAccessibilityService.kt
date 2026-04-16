@@ -78,9 +78,8 @@ class AssistAccessibilityService : AccessibilityService() {
         val root = rootInActiveWindow
         val inputNode = root?.let { findEditableNode(it) }
         root?.recycle()
-        val conversationReady = screen != null && inputNode != null
 
-        if (conversationReady && screen != null) {
+        if (screen != null && inputNode != null) {
             inputNode?.recycle()
             generateAwayReplyFromScreen(screen)
         } else if (attempt < 10) {
@@ -237,19 +236,23 @@ Output ONLY the reply or SKIP."""
         return null
     }
 
-    // Find the Send button — Fiverr shows a "Send" text button bottom-right of input
     private fun findSendButton(root: AccessibilityNodeInfo, inputNode: AccessibilityNodeInfo): AccessibilityNodeInfo? {
-        // Search by text "Send", only return if clickable (avoids matching message bubbles)
         val nodes = root.findAccessibilityNodeInfosByText("Send")
+        var found: AccessibilityNodeInfo? = null
         for (node in nodes) {
-            if (node.isClickable) return node
-            node.recycle()
+            if (found == null && node.isClickable) found = node
+            else node.recycle()
         }
-        // Fallback: get input's parent row, take last clickable non-editable child
+        if (found != null) return found
+        // Fallback: last clickable non-editable sibling of input
         val parent = inputNode.parent ?: return null
         for (i in parent.childCount - 1 downTo 0) {
             val child = parent.getChild(i) ?: continue
-            if (child.isClickable && !child.isEditable) return child
+            if (child.isClickable && !child.isEditable) {
+                parent.recycle()
+                return child
+            }
+            child.recycle()
         }
         parent.recycle()
         return null
@@ -353,16 +356,16 @@ Output ONLY the reply or SKIP."""
 
     private fun extractText(node: AccessibilityNodeInfo): String {
         val parts = mutableListOf<String>()
-        // Skip our own overlay package to avoid contaminating screen text
         val ownPkg = packageName
-        fun traverse(n: AccessibilityNodeInfo?) {
+        fun traverse(n: AccessibilityNodeInfo?, depth: Int) {
             n ?: return
+            if (depth > 30) return // prevent ANR on deep trees
             if (n.packageName?.toString() == ownPkg) return
             val t = n.text?.toString()?.trim()
             if (!t.isNullOrEmpty()) parts.add(t)
-            for (i in 0 until n.childCount) traverse(n.getChild(i))
+            for (i in 0 until n.childCount) traverse(n.getChild(i), depth + 1)
         }
-        traverse(node)
+        traverse(node, 0)
         return parts.joinToString("\n")
     }
 

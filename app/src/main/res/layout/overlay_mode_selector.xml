@@ -58,41 +58,22 @@
                 <Button android:id="@+id/btnImprove" android:layout_width="0dp" android:layout_weight="1"
                     android:layout_height="44dp" android:text="✨ Improve" android:backgroundTint="#2E7D32"
                     android:textColor="@android:color/white" android:textSize="12sp" android:layout_marginEnd="6dp"/>
-                <Button android:id="@+id/btnRewrite" android:layout_width="0dp" android:layout_weight="1"
-                    android:layout_height="44dp" android:text="🔄 Rewrite" android:backgroundTint="#2E7D32"
+                <Button android:id="@+id/btnShorten" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="44dp" android:text="✂️ Shorten" android:backgroundTint="#2E7D32"
                     android:textColor="@android:color/white" android:textSize="12sp"/>
             </LinearLayout>
 
             <!-- Row 3 -->
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="horizontal" android:layout_marginBottom="8dp">
-                <Button android:id="@+id/btnShorten" android:layout_width="0dp" android:layout_weight="1"
-                    android:layout_height="44dp" android:text="✂️ Shorten" android:backgroundTint="#388E3C"
-                    android:textColor="@android:color/white" android:textSize="12sp" android:layout_marginEnd="6dp"/>
+                android:orientation="horizontal" android:layout_marginBottom="12dp">
                 <Button android:id="@+id/btnProofread" android:layout_width="0dp" android:layout_weight="1"
                     android:layout_height="44dp" android:text="✅ Proofread" android:backgroundTint="#388E3C"
-                    android:textColor="@android:color/white" android:textSize="12sp"/>
-            </LinearLayout>
-
-            <!-- Row 4 -->
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="horizontal" android:layout_marginBottom="8dp">
-                <Button android:id="@+id/btnProfessional" android:layout_width="0dp" android:layout_weight="1"
-                    android:layout_height="44dp" android:text="💼 Professional" android:backgroundTint="#1B5E20"
                     android:textColor="@android:color/white" android:textSize="12sp" android:layout_marginEnd="6dp"/>
-                <Button android:id="@+id/btnFriendly" android:layout_width="0dp" android:layout_weight="1"
-                    android:layout_height="44dp" android:text="😊 Friendly" android:backgroundTint="#1B5E20"
-                    android:textColor="@android:color/white" android:textSize="12sp"/>
-            </LinearLayout>
-
-            <!-- Row 5 -->
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="horizontal" android:layout_marginBottom="12dp">
                 <Button android:id="@+id/btnTranslate" android:layout_width="0dp" android:layout_weight="1"
-                    android:layout_height="44dp" android:text="🌐 Translate EN" android:backgroundTint="#2E7D32"
+                    android:layout_height="44dp" android:text="🌐 Translate" android:backgroundTint="#388E3C"
                     android:textColor="@android:color/white" android:textSize="12sp" android:layout_marginEnd="6dp"/>
                 <Button android:id="@+id/btnTemplates" android:layout_width="0dp" android:layout_weight="1"
-                    android:layout_height="44dp" android:text="📁 Templates" android:backgroundTint="#2E7D32"
+                    android:layout_height="44dp" android:text="📁 Templates" android:backgroundTint="#388E3C"
                     android:textColor="@android:color/white" android:textSize="12sp"/>
             </LinearLayout>
 
