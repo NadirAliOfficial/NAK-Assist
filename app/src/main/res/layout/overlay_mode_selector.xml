@@ -144,41 +144,6 @@
                 android:textColor="#CE93D8" android:textSize="13sp"
                 android:layout_marginBottom="12dp"/>
 
-            <!-- Divider -->
-            <View android:layout_width="match_parent" android:layout_height="1dp"
-                android:background="#222222" android:layout_marginBottom="12dp"/>
-
-            <!-- Persona label -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="PERSONA"
-                android:textColor="#444444"
-                android:textSize="10sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.1"
-                android:layout_marginBottom="6dp"/>
-
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="horizontal" android:layout_marginBottom="12dp">
-                <Button android:id="@+id/btnPersonaTrading"
-                    android:layout_width="0dp" android:layout_weight="1" android:layout_height="34dp"
-                    android:text="📈" android:backgroundTint="#1565C0"
-                    android:textColor="@android:color/white" android:textSize="14sp" android:layout_marginEnd="4dp"/>
-                <Button android:id="@+id/btnPersonaFlutter"
-                    android:layout_width="0dp" android:layout_weight="1" android:layout_height="34dp"
-                    android:text="📱" android:backgroundTint="#1E1E1E"
-                    android:textColor="@android:color/white" android:textSize="14sp" android:layout_marginEnd="4dp"/>
-                <Button android:id="@+id/btnPersonaWeb3"
-                    android:layout_width="0dp" android:layout_weight="1" android:layout_height="34dp"
-                    android:text="⛓" android:backgroundTint="#1E1E1E"
-                    android:textColor="@android:color/white" android:textSize="14sp" android:layout_marginEnd="4dp"/>
-                <Button android:id="@+id/btnPersonaGeneral"
-                    android:layout_width="0dp" android:layout_weight="1" android:layout_height="34dp"
-                    android:text="⚙" android:backgroundTint="#1E1E1E"
-                    android:textColor="@android:color/white" android:textSize="14sp"/>
-            </LinearLayout>
-
             <!-- Custom command -->
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="horizontal">

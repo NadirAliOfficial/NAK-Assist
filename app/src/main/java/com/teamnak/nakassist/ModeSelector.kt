@@ -132,31 +132,6 @@ object ModeSelector {
                 FloatingButtonManager.setAwayMode(on)
             }
 
-            // Persona selector
-            val personaButtons = mapOf(
-                R.id.btnPersonaTrading to AssistAccessibilityService.Persona.TRADING,
-                R.id.btnPersonaFlutter to AssistAccessibilityService.Persona.FLUTTER,
-                R.id.btnPersonaWeb3    to AssistAccessibilityService.Persona.WEB3,
-                R.id.btnPersonaGeneral to AssistAccessibilityService.Persona.GENERAL
-            )
-            fun updatePersonaButtons() {
-                personaButtons.forEach { (id, persona) ->
-                    view.findViewById<Button>(id).backgroundTintList =
-                        android.content.res.ColorStateList.valueOf(
-                            if (AssistAccessibilityService.currentPersona == persona)
-                                android.graphics.Color.parseColor("#1565C0")
-                            else android.graphics.Color.parseColor("#333333")
-                        )
-                }
-            }
-            updatePersonaButtons()
-            personaButtons.forEach { (id, persona) ->
-                view.findViewById<Button>(id).setOnClickListener {
-                    AssistAccessibilityService.currentPersona = persona
-                    updatePersonaButtons()
-                }
-            }
-
             view.findViewById<Button>(R.id.btnCustomSend).setOnClickListener {
                 val cmd = etCustom.text.toString().trim()
                 if (cmd.isNotEmpty()) {
