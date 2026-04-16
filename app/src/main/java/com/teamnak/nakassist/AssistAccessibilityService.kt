@@ -39,11 +39,11 @@ class AssistAccessibilityService : AccessibilityService() {
         if (pkg !in FIVERR_PACKAGES) return
 
         // When Fiverr conversation screen opens and Away Mode triggered
+        // Only on STATE_CHANGED (real screen nav) — CONTENT_CHANGED fires on inbox too early
         if (MessageNotificationService.pendingAwayTrigger &&
-            (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
-             event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED)) {
+            event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             MessageNotificationService.pendingAwayTrigger = false
-            handler.postDelayed({ waitForConversationAndReply(0) }, 800)
+            handler.postDelayed({ waitForConversationAndReply(0) }, 1500)
             return
         }
 
@@ -75,15 +75,10 @@ class AssistAccessibilityService : AccessibilityService() {
     private fun waitForConversationAndReply(attempt: Int) {
         if (isGeneratingAwayReply) return
         val screen = readScreen()
-        val root = rootInActiveWindow
-        val inputNode = root?.let { findEditableNode(it) }
-        root?.recycle()
 
-        if (screen != null && inputNode != null) {
-            inputNode?.recycle()
+        if (screen != null) {
             generateAwayReplyFromScreen(screen)
-        } else if (attempt < 10) {
-            inputNode?.recycle()
+        } else if (attempt < 15) {
             handler.postDelayed({ waitForConversationAndReply(attempt + 1) }, 1000)
         }
     }
