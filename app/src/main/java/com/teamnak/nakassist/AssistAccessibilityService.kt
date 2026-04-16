@@ -212,14 +212,14 @@ Output ONLY the reply."""
                 val freshInput = findEditableNode(r2)
                 if (freshInput != null) {
                     val btn = findSendButton(r2, freshInput)
+                    android.util.Log.e("NAK", "sendBtn=${btn != null} desc=${btn?.contentDescription} text=${btn?.text}")
                     if (btn != null) {
                         btn.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
                         btn.recycle()
                     } else {
-                        // Fallback: simulate Enter key on the input field
-                        val bundle = android.os.Bundle()
-                        bundle.putInt(android.view.accessibility.AccessibilityNodeInfo.ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT, 0)
-                        freshInput.performAction(0x00000200) // ACTION_IME_ACTION
+                        // Fallback: IME action (keyboard send)
+                        freshInput.performAction(0x00000200)
+                        android.util.Log.e("NAK", "Send btn not found — tried IME action")
                     }
                     freshInput.recycle()
                 }
@@ -246,24 +246,37 @@ Output ONLY the reply."""
     }
 
     private fun findSendButton(root: AccessibilityNodeInfo, inputNode: AccessibilityNodeInfo): AccessibilityNodeInfo? {
-        val nodes = root.findAccessibilityNodeInfosByText("Send")
-        var found: AccessibilityNodeInfo? = null
-        for (node in nodes) {
-            if (found == null && node.isClickable) found = node
-            else node.recycle()
-        }
-        if (found != null) return found
-        // Fallback: last clickable non-editable sibling of input
-        val parent = inputNode.parent ?: return null
-        for (i in parent.childCount - 1 downTo 0) {
-            val child = parent.getChild(i) ?: continue
-            if (child.isClickable && !child.isEditable) {
-                parent.recycle()
-                return child
+        // Try text "Send" and content description "Send" / "send"
+        for (query in listOf("Send", "send")) {
+            val byText = root.findAccessibilityNodeInfosByText(query)
+            for (node in byText) {
+                if (node.isClickable) return node
+                node.recycle()
             }
-            child.recycle()
+            val byDesc = root.findAccessibilityNodeInfosByViewId(query)
+            for (node in byDesc) {
+                if (node.isClickable) return node
+                node.recycle()
+            }
         }
-        parent.recycle()
+        // Walk up from input to find a clickable sibling (send icon)
+        var parent = inputNode.parent
+        var depth = 0
+        while (parent != null && depth < 5) {
+            for (i in parent.childCount - 1 downTo 0) {
+                val child = parent.getChild(i) ?: continue
+                if (child.isClickable && !child.isEditable) {
+                    parent.recycle()
+                    return child
+                }
+                child.recycle()
+            }
+            val grandParent = parent.parent
+            parent.recycle()
+            parent = grandParent
+            depth++
+        }
+        parent?.recycle()
         return null
     }
 
