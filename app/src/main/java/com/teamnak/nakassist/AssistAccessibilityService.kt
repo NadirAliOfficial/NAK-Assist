@@ -199,17 +199,14 @@ Output ONLY the reply."""
             return
         }
 
-        // Paste via clipboard — triggers React Native's onChange so Send button activates
-        inputNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_FOCUS)
-        val clipboard = getSystemService(android.content.ClipboardManager::class.java)
-        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("reply", text))
-        inputNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_PASTE)
+        val args = android.os.Bundle()
+        args.putCharSequence(android.view.accessibility.AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+        inputNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_SET_TEXT, args)
         inputNode.recycle()
         root.recycle()
 
-        // Wait for RN to process paste, then click Send
+        // Click Send — use fresh nodes so nothing is stale
         handler.postDelayed({
-
             val r2 = rootInActiveWindow
             if (r2 != null) {
                 val freshInput = findEditableNode(r2)
@@ -219,7 +216,10 @@ Output ONLY the reply."""
                         btn.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
                         btn.recycle()
                     } else {
-                        freshInput.performAction(0x00000200)
+                        // Fallback: simulate Enter key on the input field
+                        val bundle = android.os.Bundle()
+                        bundle.putInt(android.view.accessibility.AccessibilityNodeInfo.ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT, 0)
+                        freshInput.performAction(0x00000200) // ACTION_IME_ACTION
                     }
                     freshInput.recycle()
                 }
@@ -233,7 +233,7 @@ Output ONLY the reply."""
                 performGlobalAction(GLOBAL_ACTION_BACK)
                 if (wasOnline) handler.postDelayed({ startStayOnline() }, 1000)
             }, 800)
-        }, 1000)
+        }, 500)
     }
 
     private fun findEditableNode(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
