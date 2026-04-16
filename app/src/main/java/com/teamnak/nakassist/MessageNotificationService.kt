@@ -18,6 +18,7 @@ class MessageNotificationService : NotificationListenerService() {
 
         // Set when Away Mode triggers — tells accessibility service to read & reply once Fiverr opens
         var pendingAwayTrigger = false
+        var pendingMessage = ""   // last buyer message from notification
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -28,7 +29,7 @@ class MessageNotificationService : NotificationListenerService() {
         val text  = extras.getCharSequence("android.text")?.toString() ?: ""
         if (text.isBlank()) return
 
-        android.util.Log.d("NAK", "Notification: pkg=${sbn.packageName} title=$title text=$text awayMode=$awayMode")
+        android.util.Log.e("NAK", "Notification: pkg=${sbn.packageName} title=$title text=$text awayMode=$awayMode")
         FloatingButtonManager.flash()
 
         // Show a brief overlay so the user knows a message arrived
@@ -39,20 +40,21 @@ class MessageNotificationService : NotificationListenerService() {
         if (awayMode) {
             val now = System.currentTimeMillis()
             val sinceLastReply = now - lastAwayReplyTime
-            android.util.Log.d("NAK", "Away mode ON — sinceLastReply=${sinceLastReply}ms cooldown=${AWAY_REPLY_COOLDOWN_MS}ms")
+            android.util.Log.e("NAK", "Away mode ON — sinceLastReply=${sinceLastReply}ms cooldown=${AWAY_REPLY_COOLDOWN_MS}ms")
             if (sinceLastReply < AWAY_REPLY_COOLDOWN_MS) {
-                android.util.Log.d("NAK", "Cooldown active — skipping")
+                android.util.Log.e("NAK", "Cooldown active — skipping")
                 return
             }
             lastAwayReplyTime = now
 
             pendingAwayTrigger = true
-            android.util.Log.d("NAK", "pendingAwayTrigger set, opening Fiverr. svcInstance=${AssistAccessibilityService.instance != null}")
+            pendingMessage = text
+            android.util.Log.e("NAK", "pendingAwayTrigger set, opening Fiverr. svcInstance=${AssistAccessibilityService.instance != null}")
             try {
                 sbn.notification.contentIntent?.send(applicationContext, 0, null)
-                android.util.Log.d("NAK", "contentIntent sent")
+                android.util.Log.e("NAK", "contentIntent sent")
             } catch (e: Exception) {
-                android.util.Log.d("NAK", "contentIntent failed: ${e.message}, trying launchIntent")
+                android.util.Log.e("NAK", "contentIntent failed: ${e.message}, trying launchIntent")
                 applicationContext.packageManager
                     .getLaunchIntentForPackage(sbn.packageName)
                     ?.apply { addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK) }
@@ -60,7 +62,7 @@ class MessageNotificationService : NotificationListenerService() {
             }
 
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                android.util.Log.d("NAK", "Fallback fired — pendingAwayTrigger=$pendingAwayTrigger svc=${AssistAccessibilityService.instance != null}")
+                android.util.Log.e("NAK", "Fallback fired — pendingAwayTrigger=$pendingAwayTrigger svc=${AssistAccessibilityService.instance != null}")
                 if (pendingAwayTrigger) {
                     pendingAwayTrigger = false
                     AssistAccessibilityService.instance?.startAwayReply()

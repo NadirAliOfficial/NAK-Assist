@@ -69,24 +69,29 @@ class AssistAccessibilityService : AccessibilityService() {
     }
 
     fun startAwayReply() {
-        android.util.Log.d("NAK", "startAwayReply called — isGenerating=$isGeneratingAwayReply")
+        android.util.Log.e("NAK", "startAwayReply called — isGenerating=$isGeneratingAwayReply")
         waitForConversationAndReply(0)
     }
 
     private fun waitForConversationAndReply(attempt: Int) {
         if (isGeneratingAwayReply) {
-            android.util.Log.d("NAK", "waitForConversation — already generating, skip")
+            android.util.Log.e("NAK", "waitForConversation — already generating, skip")
             return
         }
         val screen = readScreen()
-        android.util.Log.d("NAK", "waitForConversation attempt=$attempt screen=${if (screen != null) "${screen.length} chars" else "null"}")
+        android.util.Log.e("NAK", "waitForConversation attempt=$attempt screen=${if (screen != null) "${screen.length} chars" else "null"}")
 
-        if (screen != null) {
-            generateAwayReplyFromScreen(screen)
-        } else if (attempt < 15) {
-            handler.postDelayed({ waitForConversationAndReply(attempt + 1) }, 1000)
-        } else {
-            android.util.Log.e("NAK", "waitForConversation gave up after 15 attempts — screen still null")
+        when {
+            screen != null -> generateAwayReplyFromScreen(screen)
+            attempt < 8   -> handler.postDelayed({ waitForConversationAndReply(attempt + 1) }, 1000)
+            else -> {
+                // Screen unreadable — fall back to notification text so we still reply
+                val fallback = MessageNotificationService.pendingMessage
+                android.util.Log.e("NAK", "Screen unreadable, using notification fallback: '$fallback'")
+                if (fallback.isNotBlank()) {
+                    generateAwayReplyFromScreen("Buyer: $fallback")
+                }
+            }
         }
     }
 
@@ -135,7 +140,7 @@ Output ONLY the reply."""
 
     private fun generateAwayReplyFromScreen(screen: String) {
         isGeneratingAwayReply = true
-        android.util.Log.d("NAK", "generateAwayReply — calling Groq API")
+        android.util.Log.e("NAK", "generateAwayReply — calling Groq API")
 
         GroqApiHelper.ask(
             systemPrompt = personaPrompt(),
@@ -143,13 +148,13 @@ Output ONLY the reply."""
             maxTokens = 120,
             onResult = { reply ->
                 val clean = reply.trim()
-                android.util.Log.d("NAK", "Groq reply: '$clean'")
+                android.util.Log.e("NAK", "Groq reply: '$clean'")
                 if (clean.isBlank() || clean.length < 3) {
-                    android.util.Log.d("NAK", "Reply too short/blank — skipping send")
+                    android.util.Log.e("NAK", "Reply too short/blank — skipping send")
                     isGeneratingAwayReply = false
                 } else {
                     val delaySec = humanDelay(screen)
-                    android.util.Log.d("NAK", "Waiting ${delaySec}s before sending")
+                    android.util.Log.e("NAK", "Waiting ${delaySec}s before sending")
                     handler.postDelayed({
                         injectAndSend(fixLinks(clean)) { isGeneratingAwayReply = false }
                     }, delaySec * 1000L)
