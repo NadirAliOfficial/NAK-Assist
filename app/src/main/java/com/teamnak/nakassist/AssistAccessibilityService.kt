@@ -194,22 +194,31 @@ Output ONLY the reply or SKIP."""
         val args = android.os.Bundle()
         args.putCharSequence(android.view.accessibility.AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
         inputNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+        inputNode.recycle()
+        root.recycle()
 
-        // Click Send button
+        // Click Send — use fresh nodes so nothing is stale
         handler.postDelayed({
-            val r = rootInActiveWindow
-            if (r != null) {
-                findSendButton(r, inputNode)?.let { btn ->
-                    btn.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
-                    btn.recycle()
+            val r2 = rootInActiveWindow
+            if (r2 != null) {
+                val freshInput = findEditableNode(r2)
+                if (freshInput != null) {
+                    val btn = findSendButton(r2, freshInput)
+                    if (btn != null) {
+                        btn.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
+                        btn.recycle()
+                    } else {
+                        // Fallback: simulate Enter key on the input field
+                        val bundle = android.os.Bundle()
+                        bundle.putInt(android.view.accessibility.AccessibilityNodeInfo.ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT, 0)
+                        freshInput.performAction(0x00000200) // ACTION_IME_ACTION
+                    }
+                    freshInput.recycle()
                 }
-                r.recycle()
+                r2.recycle()
             }
-            inputNode.recycle()
             onDone?.invoke()
 
-            // Go back once: conversation → Fiverr inbox
-            // Inbox is enough — Fiverr sends notifications when you're not inside the conversation
             handler.postDelayed({
                 val wasOnline = stayOnlineEnabled
                 if (wasOnline) stopStayOnline()
@@ -217,8 +226,6 @@ Output ONLY the reply or SKIP."""
                 if (wasOnline) handler.postDelayed({ startStayOnline() }, 1000)
             }, 800)
         }, 500)
-
-        root.recycle()
     }
 
     private fun findEditableNode(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
