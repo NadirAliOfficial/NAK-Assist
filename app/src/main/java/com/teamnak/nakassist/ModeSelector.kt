@@ -157,11 +157,6 @@ object ModeSelector {
                 }
             }
 
-            view.findViewById<Button>(R.id.btnTemplates).setOnClickListener {
-                dismiss()
-                showTemplates(context, service)
-            }
-
             view.findViewById<Button>(R.id.btnCustomSend).setOnClickListener {
                 val cmd = etCustom.text.toString().trim()
                 if (cmd.isNotEmpty()) {
@@ -241,49 +236,6 @@ object ModeSelector {
             },
             onError = { error -> OverlayManager.show(context, error) }
         )
-    }
-
-    private fun showTemplates(context: Context, service: AssistAccessibilityService) {
-        handler.post {
-            dismissInternal()
-            windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-            val view = LayoutInflater.from(context).inflate(R.layout.overlay_templates, null)
-
-            val params = WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-                PixelFormat.TRANSLUCENT
-            ).apply { gravity = Gravity.BOTTOM }
-
-            view.findViewById<TextView>(R.id.tvCloseTemplates).setOnClickListener { dismiss() }
-
-            val container = view.findViewById<LinearLayout>(R.id.templateContainer)
-            Templates.list.forEach { template ->
-                val btn = Button(context).apply {
-                    text = template.title
-                    setBackgroundColor(android.graphics.Color.parseColor("#2E7D32"))
-                    setTextColor(android.graphics.Color.WHITE)
-                    val lp = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    )
-                    lp.setMargins(0, 0, 0, 8)
-                    layoutParams = lp
-                    setOnClickListener {
-                        dismiss()
-                        OverlayManager.show(context, template.text, showPaste = true) { text ->
-                            TextInjector.inject(service, text)
-                        }
-                    }
-                }
-                container.addView(btn)
-            }
-
-            selectorView = view
-            windowManager?.addView(view, params)
-        }
     }
 
     fun dismiss() {

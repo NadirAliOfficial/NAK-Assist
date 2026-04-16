@@ -164,8 +164,7 @@ Output ONLY the reply or SKIP."""
                 if (clean.isBlank() || clean.length < 3) {
                     isGeneratingAwayReply = false
                 } else {
-                    // Random 30-90s delay — looks human, not instant bot
-                    val delaySec = (30..90).random()
+                    val delaySec = humanDelay(screen)
                     handler.postDelayed({
                         injectAndSend(fixLinks(clean)) { isGeneratingAwayReply = false }
                     }, delaySec * 1000L)
@@ -176,6 +175,22 @@ Output ONLY the reply or SKIP."""
                 android.util.Log.e("NAKAssist", "Away reply error: $err")
             }
         )
+    }
+
+    private fun humanDelay(screen: String): Long {
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        val lastMsgLen = screen.lines().lastOrNull { it.isNotBlank() }?.length ?: 30
+
+        // Night hours (11pm–7am) — slow way down, like waking up to check phone
+        if (hour in 0..6 || hour >= 23) return (180..420).random().toLong()
+
+        // Delay scales with how long buyer's message was — longer = more "thinking" time
+        return when {
+            lastMsgLen < 20  -> (20..45).random().toLong()   // quick "ok/sure" → quick reply
+            lastMsgLen < 80  -> (40..90).random().toLong()   // normal message
+            lastMsgLen < 200 -> (60..150).random().toLong()  // detailed message → longer think
+            else             -> (90..210).random().toLong()  // long message → takes time to read
+        }
     }
 
     private fun injectAndSend(text: String, attempt: Int = 0, onDone: (() -> Unit)? = null) {
