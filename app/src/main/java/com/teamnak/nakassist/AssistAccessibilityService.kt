@@ -164,7 +164,11 @@ Output ONLY the reply or SKIP."""
                 if (clean.isBlank() || clean.length < 3) {
                     isGeneratingAwayReply = false
                 } else {
-                    injectAndSend(fixLinks(clean)) { isGeneratingAwayReply = false }
+                    // Random 30-90s delay — looks human, not instant bot
+                    val delaySec = (30..90).random()
+                    handler.postDelayed({
+                        injectAndSend(fixLinks(clean)) { isGeneratingAwayReply = false }
+                    }, delaySec * 1000L)
                 }
             },
             onError = { err ->
