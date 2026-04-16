@@ -40,7 +40,6 @@ class MessageNotificationService : NotificationListenerService() {
             if (now - lastAwayReplyTime < AWAY_REPLY_COOLDOWN_MS) return
             lastAwayReplyTime = now
 
-            // Open Fiverr conversation first — accessibility service will read context & reply
             pendingAwayTrigger = true
             try {
                 sbn.notification.contentIntent?.send(applicationContext, 0, null)
@@ -50,6 +49,15 @@ class MessageNotificationService : NotificationListenerService() {
                     ?.apply { addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK) }
                     ?.let { applicationContext.startActivity(it) }
             }
+
+            // Fallback: if Fiverr was already open, STATE_CHANGED never fires.
+            // Directly trigger after 2.5s to cover both cases.
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                if (pendingAwayTrigger) {
+                    pendingAwayTrigger = false
+                    AssistAccessibilityService.instance?.startAwayReply()
+                }
+            }, 2500)
         }
 
         showSystemNotification(title, text)

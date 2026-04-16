@@ -38,8 +38,7 @@ class AssistAccessibilityService : AccessibilityService() {
         val pkg = event.packageName?.toString() ?: return
         if (pkg !in FIVERR_PACKAGES) return
 
-        // When Fiverr conversation screen opens and Away Mode triggered
-        // Only on STATE_CHANGED (real screen nav) — CONTENT_CHANGED fires on inbox too early
+        // Fast path: Fiverr was not open — STATE_CHANGED fires when it opens fresh
         if (MessageNotificationService.pendingAwayTrigger &&
             event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             MessageNotificationService.pendingAwayTrigger = false
@@ -70,6 +69,10 @@ class AssistAccessibilityService : AccessibilityService() {
             .replace(Regex("https?://(?:www\\.)?theteamnak\\.com"), "__TEAMNAK__")
             .replace(Regex("theteamnak\\.com"), "__TEAMNAK__")
             .replace("__TEAMNAK__", "https://www.theteamnak.com")
+    }
+
+    fun startAwayReply() {
+        waitForConversationAndReply(0)
     }
 
     private fun waitForConversationAndReply(attempt: Int) {
