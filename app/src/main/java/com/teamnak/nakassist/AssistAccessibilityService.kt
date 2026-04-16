@@ -199,31 +199,27 @@ Output ONLY the reply."""
             return
         }
 
-        // Focus input first
+        // Paste via clipboard — triggers React Native's onChange so Send button activates
         inputNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_FOCUS)
-
-        // Copy text to clipboard and paste — this triggers React Native's onChange
-        // so the Send button becomes enabled (ACTION_SET_TEXT bypasses RN's event system)
         val clipboard = getSystemService(android.content.ClipboardManager::class.java)
         clipboard.setPrimaryClip(android.content.ClipData.newPlainText("reply", text))
         inputNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_PASTE)
         inputNode.recycle()
         root.recycle()
 
-        // Click Send after paste has time to register
+        // Wait for RN to process paste, then click Send
         handler.postDelayed({
+
             val r2 = rootInActiveWindow
             if (r2 != null) {
                 val freshInput = findEditableNode(r2)
                 if (freshInput != null) {
                     val btn = findSendButton(r2, freshInput)
-                    android.util.Log.e("NAK", "sendBtn=${btn != null} desc=${btn?.contentDescription} text=${btn?.text}")
                     if (btn != null) {
                         btn.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
                         btn.recycle()
                     } else {
-                        freshInput.performAction(0x00000200) // IME action fallback
-                        android.util.Log.e("NAK", "Send btn not found — tried IME action")
+                        freshInput.performAction(0x00000200)
                     }
                     freshInput.recycle()
                 }
@@ -237,7 +233,7 @@ Output ONLY the reply."""
                 performGlobalAction(GLOBAL_ACTION_BACK)
                 if (wasOnline) handler.postDelayed({ startStayOnline() }, 1000)
             }, 800)
-        }, 500)
+        }, 1000)
     }
 
     private fun findEditableNode(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
@@ -250,37 +246,21 @@ Output ONLY the reply."""
     }
 
     private fun findSendButton(root: AccessibilityNodeInfo, inputNode: AccessibilityNodeInfo): AccessibilityNodeInfo? {
-        // Try text "Send" and content description "Send" / "send"
-        for (query in listOf("Send", "send")) {
-            val byText = root.findAccessibilityNodeInfosByText(query)
-            for (node in byText) {
-                if (node.isClickable) return node
-                node.recycle()
-            }
-            val byDesc = root.findAccessibilityNodeInfosByViewId(query)
-            for (node in byDesc) {
-                if (node.isClickable) return node
-                node.recycle()
-            }
+        val nodes = root.findAccessibilityNodeInfosByText("Send")
+        for (node in nodes) {
+            if (node.isClickable) return node
+            node.recycle()
         }
-        // Walk up from input to find a clickable sibling (send icon)
-        var parent = inputNode.parent
-        var depth = 0
-        while (parent != null && depth < 5) {
-            for (i in parent.childCount - 1 downTo 0) {
-                val child = parent.getChild(i) ?: continue
-                if (child.isClickable && !child.isEditable) {
-                    parent.recycle()
-                    return child
-                }
-                child.recycle()
+        val parent = inputNode.parent ?: return null
+        for (i in parent.childCount - 1 downTo 0) {
+            val child = parent.getChild(i) ?: continue
+            if (child.isClickable && !child.isEditable) {
+                parent.recycle()
+                return child
             }
-            val grandParent = parent.parent
-            parent.recycle()
-            parent = grandParent
-            depth++
+            child.recycle()
         }
-        parent?.recycle()
+        parent.recycle()
         return null
     }
 
