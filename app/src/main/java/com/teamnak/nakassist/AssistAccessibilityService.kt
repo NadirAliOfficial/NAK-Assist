@@ -231,10 +231,7 @@ Output ONLY the reply."""
                 val wasOnline = stayOnlineEnabled
                 if (wasOnline) stopStayOnline()
                 performGlobalAction(GLOBAL_ACTION_BACK)
-                handler.postDelayed({
-                    performGlobalAction(GLOBAL_ACTION_HOME)
-                    if (wasOnline) handler.postDelayed({ startStayOnline() }, 1000)
-                }, 400)
+                if (wasOnline) handler.postDelayed({ startStayOnline() }, 1000)
             }, 800)
         }, 500)
     }
