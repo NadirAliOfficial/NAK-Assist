@@ -28,6 +28,7 @@ class MessageNotificationService : NotificationListenerService() {
         val text  = extras.getCharSequence("android.text")?.toString() ?: ""
         if (text.isBlank()) return
 
+        android.util.Log.d("NAK", "Notification: pkg=${sbn.packageName} title=$title text=$text awayMode=$awayMode")
         FloatingButtonManager.flash()
 
         // Show a brief overlay so the user knows a message arrived
@@ -37,25 +38,33 @@ class MessageNotificationService : NotificationListenerService() {
 
         if (awayMode) {
             val now = System.currentTimeMillis()
-            if (now - lastAwayReplyTime < AWAY_REPLY_COOLDOWN_MS) return
+            val sinceLastReply = now - lastAwayReplyTime
+            android.util.Log.d("NAK", "Away mode ON — sinceLastReply=${sinceLastReply}ms cooldown=${AWAY_REPLY_COOLDOWN_MS}ms")
+            if (sinceLastReply < AWAY_REPLY_COOLDOWN_MS) {
+                android.util.Log.d("NAK", "Cooldown active — skipping")
+                return
+            }
             lastAwayReplyTime = now
 
             pendingAwayTrigger = true
+            android.util.Log.d("NAK", "pendingAwayTrigger set, opening Fiverr. svcInstance=${AssistAccessibilityService.instance != null}")
             try {
                 sbn.notification.contentIntent?.send(applicationContext, 0, null)
-            } catch (_: Exception) {
+                android.util.Log.d("NAK", "contentIntent sent")
+            } catch (e: Exception) {
+                android.util.Log.d("NAK", "contentIntent failed: ${e.message}, trying launchIntent")
                 applicationContext.packageManager
                     .getLaunchIntentForPackage(sbn.packageName)
                     ?.apply { addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK) }
                     ?.let { applicationContext.startActivity(it) }
             }
 
-            // Fallback: if Fiverr was already open, STATE_CHANGED never fires.
-            // Directly trigger after 2.5s to cover both cases.
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                android.util.Log.d("NAK", "Fallback fired — pendingAwayTrigger=$pendingAwayTrigger svc=${AssistAccessibilityService.instance != null}")
                 if (pendingAwayTrigger) {
                     pendingAwayTrigger = false
                     AssistAccessibilityService.instance?.startAwayReply()
+                        ?: android.util.Log.e("NAK", "startAwayReply FAILED — accessibility service is null!")
                 }
             }, 2500)
         }

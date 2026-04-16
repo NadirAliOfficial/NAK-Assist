@@ -72,17 +72,24 @@ class AssistAccessibilityService : AccessibilityService() {
     }
 
     fun startAwayReply() {
+        android.util.Log.d("NAK", "startAwayReply called — isGenerating=$isGeneratingAwayReply")
         waitForConversationAndReply(0)
     }
 
     private fun waitForConversationAndReply(attempt: Int) {
-        if (isGeneratingAwayReply) return
+        if (isGeneratingAwayReply) {
+            android.util.Log.d("NAK", "waitForConversation — already generating, skip")
+            return
+        }
         val screen = readScreen()
+        android.util.Log.d("NAK", "waitForConversation attempt=$attempt screen=${if (screen != null) "${screen.length} chars" else "null"}")
 
         if (screen != null) {
             generateAwayReplyFromScreen(screen)
         } else if (attempt < 15) {
             handler.postDelayed({ waitForConversationAndReply(attempt + 1) }, 1000)
+        } else {
+            android.util.Log.e("NAK", "waitForConversation gave up after 15 attempts — screen still null")
         }
     }
 
@@ -153,6 +160,7 @@ Output ONLY the reply or SKIP."""
 
     private fun generateAwayReplyFromScreen(screen: String) {
         isGeneratingAwayReply = true
+        android.util.Log.d("NAK", "generateAwayReply — calling Groq API")
 
         GroqApiHelper.ask(
             systemPrompt = personaPrompt(),
@@ -160,10 +168,13 @@ Output ONLY the reply or SKIP."""
             maxTokens = 120,
             onResult = { reply ->
                 val clean = reply.trim()
+                android.util.Log.d("NAK", "Groq reply: '$clean'")
                 if (clean.isBlank() || clean.length < 3) {
+                    android.util.Log.d("NAK", "Reply too short/blank — skipping send")
                     isGeneratingAwayReply = false
                 } else {
                     val delaySec = humanDelay(screen)
+                    android.util.Log.d("NAK", "Waiting ${delaySec}s before sending")
                     handler.postDelayed({
                         injectAndSend(fixLinks(clean)) { isGeneratingAwayReply = false }
                     }, delaySec * 1000L)
@@ -171,7 +182,7 @@ Output ONLY the reply or SKIP."""
             },
             onError = { err ->
                 isGeneratingAwayReply = false
-                android.util.Log.e("NAKAssist", "Away reply error: $err")
+                android.util.Log.e("NAK", "Away reply error: $err")
             }
         )
     }
@@ -377,7 +388,7 @@ Output ONLY the reply or SKIP."""
         val ownPkg = packageName
         fun traverse(n: AccessibilityNodeInfo?, depth: Int) {
             n ?: return
-            if (depth > 30) return // prevent ANR on deep trees
+            if (depth > 60) return // prevent ANR on deep trees (React Native apps can be 50+ deep)
             if (n.packageName?.toString() == ownPkg) return
             val t = n.text?.toString()?.trim()
             if (!t.isNullOrEmpty()) parts.add(t)
