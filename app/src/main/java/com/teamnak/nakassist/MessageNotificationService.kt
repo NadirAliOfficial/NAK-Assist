@@ -29,7 +29,22 @@ class MessageNotificationService : NotificationListenerService() {
         val text  = extras.getCharSequence("android.text")?.toString() ?: ""
         if (text.isBlank()) return
 
+        // Ignore notification echoes of our own sent replies (prevents infinite reply loop)
+        val sinceLastSent = System.currentTimeMillis() - AssistAccessibilityService.lastSentTimestamp
+        if (sinceLastSent < 15_000) {
+            android.util.Log.e("NAK", "Ignoring notification — likely echo of our own reply (${sinceLastSent}ms ago)")
+            return
+        }
+
         android.util.Log.e("NAK", "Notification: pkg=${sbn.packageName} title=$title text=$text awayMode=$awayMode")
+
+        // Track stats & cache conversation
+        StatsTracker.recordMessage()
+        ConversationCache.addMessage(title, text)
+        AssistAccessibilityService.lastNotificationTimestamp = System.currentTimeMillis()
+
+        // Increment unreplied badge
+        FloatingButtonManager.incrementUnreplied()
         FloatingButtonManager.flash()
 
         // Show a brief overlay so the user knows a message arrived
@@ -90,8 +105,10 @@ class MessageNotificationService : NotificationListenerService() {
             .setContentText(text)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
+            .setGroup("nak_fiverr_messages")
             .build()
 
-        manager.notify(System.currentTimeMillis().toInt(), notification)
+        // Use title hashCode so each buyer gets one notification (updated, not stacked)
+        manager.notify(title.hashCode(), notification)
     }
 }

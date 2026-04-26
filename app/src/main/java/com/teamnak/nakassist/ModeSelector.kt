@@ -8,9 +8,6 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.WindowManager
 import android.widget.Button
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.TextView
 
 object ModeSelector {
 
@@ -25,7 +22,7 @@ object ModeSelector {
         selectorView = null
     }
 
-    fun show(context: Context, screenText: String, service: AssistAccessibilityService) {
+    fun show(context: Context, service: AssistAccessibilityService) {
         handler.post {
             dismissInternal()
             windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -35,33 +32,11 @@ object ModeSelector {
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                // No FLAG_SECURE here — it breaks focusable overlays on many ROMs
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
                 PixelFormat.TRANSLUCENT
-            ).apply {
-                gravity = Gravity.BOTTOM
-                softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
-                        WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN
-            }
+            ).apply { gravity = Gravity.BOTTOM }
 
-            view.findViewById<TextView>(R.id.tvCloseMode).setOnClickListener { dismiss() }
-            val etCustom = view.findViewById<EditText>(R.id.etCustomCommand)
-
-            val modes = mapOf(
-                R.id.btnSmartReply to "smartreply",
-                R.id.btnSummarize  to "summarize",
-                R.id.btnImprove    to "improve",
-                R.id.btnShorten    to "shorten",
-                R.id.btnProofread  to "proofread",
-                R.id.btnTranslate  to "translate"
-            )
-
-            modes.forEach { (id, mode) ->
-                view.findViewById<Button>(id).setOnClickListener {
-                    dismiss()
-                    runMode(context, service, screenText, mode)
-                }
-            }
+            view.findViewById<android.widget.TextView>(R.id.tvCloseMode).setOnClickListener { dismiss() }
 
             // Stay Online toggle
             val btnStayOnline = view.findViewById<Button>(R.id.btnAutoRefreshToggle)
@@ -70,18 +45,13 @@ object ModeSelector {
                 val secs = AssistAccessibilityService.stayOnlineInterval
                 btnStayOnline.text = if (on) "🟢 Stay Online: ON (${secs}s)" else "🟢 Stay Online: OFF"
                 btnStayOnline.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                    if (on) android.graphics.Color.parseColor("#1565C0")
-                    else android.graphics.Color.parseColor("#555555")
+                    android.graphics.Color.parseColor(if (on) "#0A3A0A" else "#1A2A1A")
                 )
             }
             updateStayOnlineBtn()
             btnStayOnline.setOnClickListener {
-                val svc = AssistAccessibilityService.instance
-                if (AssistAccessibilityService.stayOnlineEnabled) {
-                    svc?.stopStayOnline()
-                } else {
-                    svc?.startStayOnline()
-                }
+                if (AssistAccessibilityService.stayOnlineEnabled) service.stopStayOnline()
+                else service.startStayOnline()
                 updateStayOnlineBtn()
             }
 
@@ -96,9 +66,10 @@ object ModeSelector {
                 intervals.forEach { (id, secs) ->
                     view.findViewById<Button>(id).backgroundTintList =
                         android.content.res.ColorStateList.valueOf(
-                            if (AssistAccessibilityService.stayOnlineInterval == secs)
-                                android.graphics.Color.parseColor("#1565C0")
-                            else android.graphics.Color.parseColor("#333333")
+                            android.graphics.Color.parseColor(
+                                if (AssistAccessibilityService.stayOnlineInterval == secs) "#1565C0"
+                                else "#2C2C2E"
+                            )
                         )
                 }
             }
@@ -106,9 +77,8 @@ object ModeSelector {
             intervals.forEach { (id, secs) ->
                 view.findViewById<Button>(id).setOnClickListener {
                     AssistAccessibilityService.stayOnlineInterval = secs
-                    if (AssistAccessibilityService.stayOnlineEnabled) {
-                        AssistAccessibilityService.instance?.startStayOnline()
-                    }
+                    PersistenceHelper.saveStayOnlineInterval(context, secs)
+                    if (AssistAccessibilityService.stayOnlineEnabled) service.startStayOnline()
                     updateIntervalButtons()
                     updateStayOnlineBtn()
                 }
@@ -116,94 +86,29 @@ object ModeSelector {
 
             // Away Mode toggle
             val btnAway = view.findViewById<Button>(R.id.btnAwayModeToggle)
-            btnAway.text = if (MessageNotificationService.awayMode) "💤 Away Mode: ON" else "💤 Away Mode: OFF"
-            btnAway.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                if (MessageNotificationService.awayMode) android.graphics.Color.parseColor("#9C27B0")
-                else android.graphics.Color.parseColor("#555555")
-            )
-            btnAway.setOnClickListener {
-                MessageNotificationService.awayMode = !MessageNotificationService.awayMode
+            fun updateAwayBtn() {
                 val on = MessageNotificationService.awayMode
                 btnAway.text = if (on) "💤 Away Mode: ON" else "💤 Away Mode: OFF"
                 btnAway.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                    if (on) android.graphics.Color.parseColor("#9C27B0")
-                    else android.graphics.Color.parseColor("#555555")
+                    android.graphics.Color.parseColor(if (on) "#4A1060" else "#2C1F3A")
                 )
-                FloatingButtonManager.setAwayMode(on)
             }
-
-            view.findViewById<Button>(R.id.btnCustomSend).setOnClickListener {
-                val cmd = etCustom.text.toString().trim()
-                if (cmd.isNotEmpty()) {
-                    dismiss()
-                    runMode(context, service, screenText, "custom", cmd)
-                }
+            updateAwayBtn()
+            btnAway.setOnClickListener {
+                MessageNotificationService.awayMode = !MessageNotificationService.awayMode
+                val on = MessageNotificationService.awayMode
+                PersistenceHelper.saveAwayMode(context, on)
+                FloatingButtonManager.setAwayMode(on)
+                updateAwayBtn()
             }
 
             selectorView = view
-            windowManager?.addView(view, params)
+            try {
+                windowManager?.addView(view, params)
+            } catch (e: Exception) {
+                android.util.Log.e("NAK", "Failed to add mode selector: ${e.message}")
+            }
         }
-    }
-
-    fun runMode(
-        context: Context,
-        service: AssistAccessibilityService,
-        screenText: String,
-        mode: String,
-        customCmd: String = ""
-    ) {
-        val canPaste = mode !in listOf("summarize")
-
-        // Trim input to reduce token usage — take last portion (most recent/relevant)
-        val trimmed = screenText.takeLast(3000)
-
-        val (system, user, tokens) = when (mode) {
-            "smartreply" -> Triple(
-                service.personaPrompt(),
-                "Conversation:\n$trimmed\n\nWrite Nadir's reply:",
-                150
-            )
-            "summarize" -> Triple(
-                "Summarize in 3-5 bullet points. Be concise.",
-                trimmed, 120
-            )
-            "improve" -> Triple(
-                "Improve clarity and flow of text in <i> tags. Keep same meaning and length. Output ONLY result.",
-                "<i>$trimmed</i>", 150
-            )
-            "shorten" -> Triple(
-                "Shorten text in <i> tags. Keep core meaning. Output ONLY result.",
-                "<i>$trimmed</i>", 80
-            )
-            "proofread" -> Triple(
-                "Fix grammar and spelling in <i> tags. Don't change wording. Output ONLY result.",
-                "<i>$trimmed</i>", 150
-            )
-            "translate" -> Triple(
-                "Translate text in <i> tags: non-English→English, English→Spanish. Output ONLY translation.",
-                "<i>$trimmed</i>", 150
-            )
-            "custom" -> Triple(
-                "Follow the instruction exactly. Output ONLY the result.",
-                "Instruction: $customCmd\n\nText:\n$trimmed", 150
-            )
-            else -> Triple("", trimmed, 120)
-        }
-
-        OverlayManager.showLoading(context, "Working...")
-
-        GroqApiHelper.ask(
-            systemPrompt = system,
-            userContent = user,
-            maxTokens = tokens,
-            onResult = { result ->
-                val cleaned = if (mode == "smartreply") service.fixLinks(result.trim()) else result
-                OverlayManager.show(context, cleaned, showPaste = canPaste) { text ->
-                    TextInjector.inject(service, text)
-                }
-            },
-            onError = { error -> OverlayManager.show(context, error) }
-        )
     }
 
     fun dismiss() {

@@ -1,7 +1,18 @@
 <resources>
-    <style name="Theme.NAKAssist" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="Theme.NAKAssist" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">#1B5E20</item>
-        <item name="colorPrimaryDark">#1B5E20</item>
-        <item name="colorAccent">#4CAF50</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#A5D6A7</item>
+        <item name="colorOnPrimaryContainer">#002204</item>
+        <item name="colorSecondary">#9C27B0</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorTertiary">#1565C0</item>
+        <item name="colorOnTertiary">#FFFFFF</item>
+        <item name="colorSurface">#121212</item>
+        <item name="colorOnSurface">#E0E0E0</item>
+        <item name="colorSurfaceVariant">#1E1E1E</item>
+        <item name="colorOnSurfaceVariant">#AAAAAA</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">#121212</item>
     </style>
 </resources>

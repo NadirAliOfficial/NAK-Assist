@@ -9,10 +9,12 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.color.DynamicColors
 
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        DynamicColors.applyToActivityIfAvailable(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         window.setFlags(
@@ -38,15 +40,25 @@ class MainActivity : AppCompatActivity() {
         }
 
         val btnAway = findViewById<Button>(R.id.btnAwayMode)
-        btnAway.setOnClickListener {
-            MessageNotificationService.awayMode = !MessageNotificationService.awayMode
+        fun updateAwayBtn() {
             val on = MessageNotificationService.awayMode
             btnAway.text = if (on) "💤 Away Mode: ON" else "💤 Away Mode: OFF"
             btnAway.backgroundTintList = android.content.res.ColorStateList.valueOf(
                 if (on) android.graphics.Color.parseColor("#9C27B0")
                 else android.graphics.Color.parseColor("#555555")
             )
+        }
+
+        // Load persisted state
+        MessageNotificationService.awayMode = PersistenceHelper.loadAwayMode(this)
+        updateAwayBtn()
+
+        btnAway.setOnClickListener {
+            MessageNotificationService.awayMode = !MessageNotificationService.awayMode
+            val on = MessageNotificationService.awayMode
+            PersistenceHelper.saveAwayMode(this, on)
             FloatingButtonManager.setAwayMode(on)
+            updateAwayBtn()
             Toast.makeText(this,
                 if (on) "Away Mode ON — auto-replies enabled" else "Away Mode OFF",
                 Toast.LENGTH_SHORT).show()
@@ -63,12 +75,19 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "✅ Keys saved", Toast.LENGTH_SHORT).show()
         }
 
+        // Stats
+        StatsTracker.init(this)
+        val tvStats = findViewById<TextView>(R.id.tvStats)
+        tvStats.text = StatsTracker.getTodaySummary()
+
         updateStatus()
     }
 
     override fun onResume() {
         super.onResume()
         updateStatus()
+        // Refresh stats
+        try { findViewById<TextView>(R.id.tvStats).text = StatsTracker.getTodaySummary() } catch (_: Exception) {}
     }
 
     private fun updateStatus() {

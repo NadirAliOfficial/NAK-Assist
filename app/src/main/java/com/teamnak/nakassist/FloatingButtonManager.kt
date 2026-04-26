@@ -15,9 +15,10 @@ object FloatingButtonManager {
     private var windowManager: WindowManager? = null
     private var buttonView: TextView? = null
     private val handler = Handler(Looper.getMainLooper())
-    private var lastTapTime = 0L
     private var countdownRunnable: Runnable? = null
+    private var longPressRunnable: Runnable? = null
     private var countdownSeconds = 0
+    private var unrepliedCount = 0
 
     fun show(context: Context) {
         if (buttonView != null) return
@@ -55,6 +56,7 @@ object FloatingButtonManager {
             var initialX = 0; var initialY = 0
             var touchX = 0f; var touchY = 0f
             var moved = false
+            var longPressed = false
 
             button.setOnTouchListener { _, event ->
                 when (event.action) {
@@ -62,38 +64,35 @@ object FloatingButtonManager {
                         initialX = params.x; initialY = params.y
                         touchX = event.rawX; touchY = event.rawY
                         moved = false
+                        longPressed = false
                         button.alpha = 1f
+                        longPressRunnable = Runnable {
+                            if (!moved) {
+                                longPressed = true
+                                button.alpha = 0.4f
+                                AssistAccessibilityService.instance?.openModeSelector()
+                            }
+                        }
+                        handler.postDelayed(longPressRunnable!!, 500)
                         true
                     }
                     MotionEvent.ACTION_MOVE -> {
                         val dx = (event.rawX - touchX).toInt()
                         val dy = (event.rawY - touchY).toInt()
-                        if (Math.abs(dx) > 8 || Math.abs(dy) > 8) moved = true
+                        if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+                            moved = true
+                            longPressRunnable?.let { handler.removeCallbacks(it) }
+                        }
                         params.x = initialX + dx
                         params.y = initialY + dy
                         windowManager?.updateViewLayout(button, params)
                         true
                     }
                     MotionEvent.ACTION_UP -> {
+                        longPressRunnable?.let { handler.removeCallbacks(it) }
                         button.alpha = 0.4f
-                        if (!moved) {
-                            val now = System.currentTimeMillis()
-                            if (now - lastTapTime < 400) {
-                                // Double tap → mode selector (delay lets touch events settle)
-                                lastTapTime = 0
-                                handler.removeCallbacksAndMessages(null)
-                                handler.postDelayed({
-                                    AssistAccessibilityService.instance?.openModeSelector()
-                                }, 150)
-                            } else {
-                                // Single tap → smart reply
-                                lastTapTime = now
-                                handler.postDelayed({
-                                    if (lastTapTime == now) {
-                                        AssistAccessibilityService.instance?.smartReply()
-                                    }
-                                }, 350)
-                            }
+                        if (!moved && !longPressed) {
+                            AssistAccessibilityService.instance?.handleTap()
                         }
                         true
                     }
@@ -103,7 +102,11 @@ object FloatingButtonManager {
 
             button.alpha = 0.4f
             buttonView = button
-            windowManager?.addView(button, params)
+            try {
+                windowManager?.addView(button, params)
+            } catch (e: Exception) {
+                android.util.Log.e("NAK", "Failed to add floating button: ${e.message}")
+            }
         }
     }
 
@@ -131,8 +134,32 @@ object FloatingButtonManager {
                 shape = android.graphics.drawable.GradientDrawable.OVAL
                 setColor(android.graphics.Color.parseColor(if (on) "#DD9C27B0" else "#DD1B5E20"))
             }
-            buttonView?.text = if (on) "💤" else "⚡"
+            updateButtonText()
         }
+    }
+
+    // ── Unreplied Badge ──────────────────────────────────────────────────
+
+    fun incrementUnreplied() {
+        handler.post {
+            unrepliedCount++
+            updateButtonText()
+        }
+    }
+
+    fun resetUnreplied() {
+        handler.post {
+            unrepliedCount = 0
+            updateButtonText()
+        }
+    }
+
+    private fun updateButtonText() {
+        val btn = buttonView ?: return
+        // Don't override countdown text
+        if (countdownRunnable != null) return
+        val icon = if (MessageNotificationService.awayMode) "💤" else "⚡"
+        btn.text = if (unrepliedCount > 0) "$icon$unrepliedCount" else icon
     }
 
     fun startCountdown(intervalSeconds: Int) {
@@ -153,7 +180,7 @@ object FloatingButtonManager {
     fun stopCountdown() {
         countdownRunnable?.let { handler.removeCallbacks(it) }
         countdownRunnable = null
-        buttonView?.text = if (MessageNotificationService.awayMode) "💤" else "⚡"
+        updateButtonText()
     }
 
     fun setKeepScreenOn(on: Boolean) {

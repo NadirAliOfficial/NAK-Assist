@@ -1,46 +1,66 @@
 # NAK Assist
 
-> AI-powered smart assistant for Android — by **Nadir Ali Khan** | [Team NAK](https://teamnak.com)
+> AI-powered Fiverr assistant for Android — by **Nadir Ali Khan** | [theteamnak.com](https://www.theteamnak.com)
 
 ## What it does
 
-NAK Assist runs as a floating button on any Android app. Tap it to instantly get AI-powered help — write replies, improve text, summarize, translate and more.
+NAK Assist runs as a floating overlay button on Android. It reads the screen using the Accessibility API and uses AI to generate context-aware replies for Fiverr conversations — fully automated or on demand.
 
-## Modes
+## Features
 
-| Mode | Trigger | Description |
-|------|---------|-------------|
-| 💬 Smart Reply | Single tap | Reads screen and writes a professional reply |
-| 📋 Summarize | Double tap | Summarizes screen content in bullet points |
-| ✨ Improve | Long press → menu | Makes text clearer and more professional |
-| 🔄 Rewrite | Long press → menu | Rewrites text in a polished way |
-| ✂️ Shorten | Long press → menu | Shortens text keeping key meaning |
-| ✅ Proofread | Long press → menu | Fixes grammar and spelling errors |
-| 💼 Professional | Long press → menu | Rewrites in formal professional tone |
-| 😊 Friendly | Long press → menu | Rewrites in warm conversational tone |
-| 🌐 Translate | Long press → menu | Translates text to English |
-| 📁 Templates | Long press → menu | Pre-built Fiverr response templates |
-| ⚙️ Custom | Long press → menu | Type any custom instruction |
+### Smart Reply (single tap)
+Reads the current Fiverr chat screen, pulls in conversation history, and generates a short professional reply. If there is already text in the input field it polishes it instead.
+
+### Auto Polish
+If the input field has text when you tap, it fixes grammar and spelling and improves clarity — then shows the result for review before sending.
+
+### Away Mode
+Monitors Fiverr notifications. When a message arrives, it automatically opens the conversation, generates a reply, injects it, and sends — then navigates back. Fully hands-free.
+
+### Stay Online
+Periodically sends a micro-gesture to keep Fiverr online status active. Configurable intervals: 5s / 10s / 30s / 60s. Shown as a live countdown on the floating button.
+
+### Conversation Memory
+Caches up to 30 messages per buyer across 20 buyers, persisted to disk. Every smart reply includes full conversation history so context is never lost across sessions.
+
+### Banned Word Safety Filter
+Secondary defence on top of the AI prompt. Any generated reply containing Fiverr-banned words (off-platform contacts, payment methods, @ symbol) is automatically regenerated up to 2 times before being discarded. Dollar amounts and timelines are allowed.
+
+### Context Detection
+Automatically switches between Fiverr chat mode, Fiverr order page mode, and general mode based on the active screen — no manual switching needed.
+
+## Controls
+
+| Action | Result |
+|--------|--------|
+| Single tap | Smart reply (or polish if input has text) |
+| Long press 500ms | Open mode selector menu |
+| Mode menu | Toggle Away Mode, Stay Online, set interval |
 
 ## Tech Stack
 
 - **Language:** Kotlin (Native Android)
-- **AI Model:** Llama 3.3 70B via Groq API (free)
+- **AI:** Llama 3.3 70B via Groq API
 - **Min SDK:** Android 8.0 (API 26)
-- **Permissions:** Accessibility Service, Overlay
+- **Permissions:** Accessibility Service, Draw Over Other Apps, Notifications
 
 ## Setup
 
-1. Open in Android Studio
-2. Build APK: `Build → Build APK(s)`
-3. Install on Android
-4. Grant overlay permission + enable accessibility service
-5. Tap ⚡ on any screen
+1. Clone and open in Android Studio
+2. Add your Groq API key to `GroqApiHelper.kt`
+3. Build and install: `./gradlew installDebug`
+4. Grant overlay permission
+5. Enable NAK Assist in Android Accessibility Settings
+6. Floating button appears on all screens
 
-## Team
+## Running Tests
 
-Built by **Nadir Ali Khan** — Founder & CEO of [Team NAK](https://teamnak.com)
+```bash
+./gradlew testDebugUnitTest
+```
+
+Includes unit tests for the banned-word safety filter covering 39 cases.
 
 ---
 
-© 2026 Team NAK. All rights reserved.
+Built by **Nadir Ali Khan** — [theteamnak.com](https://www.theteamnak.com) | [GitHub](https://github.com/NadirAliOfficial)

@@ -6,7 +6,6 @@ import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
@@ -17,12 +16,16 @@ object OverlayManager {
     private var overlayView: android.view.View? = null
     private val handler = Handler(Looper.getMainLooper())
     private var hideRunnable: Runnable? = null
-    private var onPasteCallback: ((String) -> Unit)? = null
 
-    fun show(context: Context, text: String, showPaste: Boolean = false, onPaste: ((String) -> Unit)? = null) {
+    fun show(
+        context: Context,
+        text: String,
+        showPaste: Boolean = false,
+        onRetry: (() -> Unit)? = null,
+        onPaste: ((String) -> Unit)? = null
+    ) {
         handler.post {
             dismiss()
-            onPasteCallback = onPaste
 
             windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
             val view = LayoutInflater.from(context).inflate(R.layout.overlay_response, null)
@@ -30,15 +33,20 @@ object OverlayManager {
             view.findViewById<TextView>(R.id.tvResponse).text = text
             view.findViewById<TextView>(R.id.tvClose).setOnClickListener { dismiss() }
 
-            val btnPaste = view.findViewById<Button>(R.id.btnPaste)
-            if (showPaste && onPaste != null) {
-                btnPaste.visibility = android.view.View.VISIBLE
-                btnPaste.setOnClickListener {
-                    onPaste(text)
-                    dismiss()
-                }
+            val tvRetry = view.findViewById<TextView>(R.id.tvRetry)
+            if (onRetry != null) {
+                tvRetry.visibility = android.view.View.VISIBLE
+                tvRetry.setOnClickListener { dismiss(); onRetry() }
             } else {
-                btnPaste.visibility = android.view.View.GONE
+                tvRetry.visibility = android.view.View.GONE
+            }
+
+            val btnSend = view.findViewById<Button>(R.id.btnPaste)
+            if (showPaste && onPaste != null) {
+                btnSend.visibility = android.view.View.VISIBLE
+                btnSend.setOnClickListener { onPaste(text); dismiss() }
+            } else {
+                btnSend.visibility = android.view.View.GONE
             }
 
             val params = WindowManager.LayoutParams(
@@ -49,11 +57,11 @@ object OverlayManager {
                 PixelFormat.TRANSLUCENT
             ).apply {
                 gravity = Gravity.BOTTOM
-                y = 120
+                y = 0
             }
 
             overlayView = view
-            windowManager?.addView(view, params)
+            try { windowManager?.addView(view, params) } catch (_: Exception) {}
 
             hideRunnable = Runnable { dismiss() }
             handler.postDelayed(hideRunnable!!, 30000)

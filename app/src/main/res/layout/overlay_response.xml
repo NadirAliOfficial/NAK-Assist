@@ -3,53 +3,71 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="#EE1B1B1B"
-    android:padding="16dp">
+    android:background="#F21C1C1E"
+    android:paddingTop="16dp"
+    android:paddingHorizontal="16dp"
+    android:paddingBottom="20dp">
 
+    <!-- Header row -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="10dp">
+        android:layout_marginBottom="12dp">
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="⚡ NAK Assist"
-            android:textColor="#4CAF50"
+            android:textColor="#30D158"
             android:textSize="13sp"
             android:textStyle="bold" />
 
+        <!-- Retry -->
         <TextView
-            android:id="@+id/tvClose"
+            android:id="@+id/tvRetry"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="↺ Retry"
+            android:textColor="#636366"
+            android:textSize="13sp"
+            android:paddingEnd="16dp"
+            android:visibility="gone" />
+
+        <!-- Close -->
+        <TextView
+            android:id="@+id/tvClose"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
             android:text="✕"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:padding="4dp" />
+            android:textColor="#636366"
+            android:textSize="14sp"
+            android:gravity="center" />
     </LinearLayout>
 
+    <!-- Reply text -->
     <TextView
         android:id="@+id/tvResponse"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text=""
-        android:textColor="#FFFFFF"
-        android:textSize="14sp"
-        android:lineSpacingExtra="4dp"
-        android:layout_marginBottom="12dp" />
+        android:textColor="#F2F2F7"
+        android:textSize="15sp"
+        android:lineSpacingExtra="5dp"
+        android:layout_marginBottom="16dp" />
 
+    <!-- Send button -->
     <Button
         android:id="@+id/btnPaste"
         android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:text="Paste into input"
-        android:backgroundTint="#2E7D32"
-        android:textColor="@android:color/white"
-        android:textSize="13sp"
+        android:layout_height="50dp"
+        android:text="Send"
+        android:backgroundTint="#30D158"
+        android:textColor="#000000"
+        android:textSize="15sp"
+        android:textStyle="bold"
         android:visibility="gone" />
 
 </LinearLayout>
