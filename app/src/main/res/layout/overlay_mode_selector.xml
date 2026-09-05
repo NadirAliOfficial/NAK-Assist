@@ -20,7 +20,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="⚡ NAK Assist"
-            android:textColor="#30D158"
+            android:textColor="#4F8CFF"
             android:textSize="15sp"
             android:textStyle="bold" />
         <TextView
@@ -37,8 +37,8 @@
     <Button android:id="@+id/btnAwayModeToggle"
         android:layout_width="match_parent" android:layout_height="50dp"
         android:text="💤 Away Mode: OFF"
-        android:backgroundTint="#2C1F3A"
-        android:textColor="#BF5AF2" android:textSize="14sp"
+        android:backgroundTint="#2C2C2E"
+        android:textColor="#4F8CFF" android:textSize="14sp"
         android:layout_marginBottom="8dp"/>
 
     <!-- Keep Screen On — local only, no interaction with Fiverr -->

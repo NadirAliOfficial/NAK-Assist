@@ -1,12 +1,12 @@
 <resources>
     <style name="Theme.NAKAssist" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">#1B5E20</item>
+        <item name="colorPrimary">#4F8CFF</item>
         <item name="colorOnPrimary">#FFFFFF</item>
-        <item name="colorPrimaryContainer">#A5D6A7</item>
-        <item name="colorOnPrimaryContainer">#002204</item>
-        <item name="colorSecondary">#9C27B0</item>
+        <item name="colorPrimaryContainer">#1E3A6B</item>
+        <item name="colorOnPrimaryContainer">#D6E4FF</item>
+        <item name="colorSecondary">#4F8CFF</item>
         <item name="colorOnSecondary">#FFFFFF</item>
-        <item name="colorTertiary">#1565C0</item>
+        <item name="colorTertiary">#4F8CFF</item>
         <item name="colorOnTertiary">#FFFFFF</item>
         <item name="colorSurface">#121212</item>
         <item name="colorOnSurface">#E0E0E0</item>

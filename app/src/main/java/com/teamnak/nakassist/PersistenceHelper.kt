@@ -89,6 +89,24 @@ object PersistenceHelper {
             .getStringSet("unread_buyers", emptySet()) ?: emptySet()
     }
 
+    fun saveDrafts(ctx: Context, data: Map<String, String>) {
+        val root = JSONObject()
+        data.forEach { (key, draft) -> root.put(key, draft) }
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putString("drafts", root.toString()).apply()
+    }
+
+    fun loadDrafts(ctx: Context): Map<String, String> {
+        val raw = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString("drafts", null) ?: return emptyMap()
+        return try {
+            val root = JSONObject(raw)
+            val result = mutableMapOf<String, String>()
+            root.keys().forEach { key -> result[key] = root.getString(key) }
+            result
+        } catch (_: Exception) { emptyMap() }
+    }
+
     // ── Quick Replies ─────────────────────────────────────────────────────
 
     fun saveQuickReplies(ctx: Context, replies: List<String>) {

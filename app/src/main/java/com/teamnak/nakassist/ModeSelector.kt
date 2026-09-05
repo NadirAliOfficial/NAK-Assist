@@ -44,7 +44,7 @@ object ModeSelector {
                 val on = MessageNotificationService.awayMode
                 btnAway.text = if (on) "💤 Away Mode: ON" else "💤 Away Mode: OFF"
                 btnAway.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                    android.graphics.Color.parseColor(if (on) "#4A1060" else "#2C1F3A")
+                    android.graphics.Color.parseColor(if (on) "#2F5FCC" else "#2C2C2E")
                 )
             }
             updateAwayBtn()
@@ -62,7 +62,7 @@ object ModeSelector {
                 val on = FloatingButtonManager.isKeepScreenOnEnabled()
                 btnKeepScreenOn.text = if (on) "🔆 Keep Screen On: ON" else "🔆 Keep Screen On: OFF"
                 btnKeepScreenOn.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                    android.graphics.Color.parseColor(if (on) "#1A2A1A" else "#2C2C2E")
+                    android.graphics.Color.parseColor(if (on) "#2F5FCC" else "#2C2C2E")
                 )
             }
             updateKeepScreenOnBtn()

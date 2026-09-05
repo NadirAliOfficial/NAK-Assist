@@ -12,6 +12,11 @@ import android.widget.TextView
 
 object FloatingButtonManager {
 
+    // Single accent hue app-wide — away mode is distinguished by icon (⚡/💤) and
+    // a darker shade of the same blue, never a different color family.
+    private const val ACCENT = "#DD4F8CFF"
+    private const val ACCENT_ACTIVE = "#DD2F5FCC"
+
     private var windowManager: WindowManager? = null
     private var buttonView: TextView? = null
     private val handler = Handler(Looper.getMainLooper())
@@ -32,7 +37,7 @@ object FloatingButtonManager {
                 setSingleLine(true)
                 background = GradientDrawable().apply {
                     shape = GradientDrawable.OVAL
-                    setColor(android.graphics.Color.parseColor("#DD1B5E20"))
+                    setColor(android.graphics.Color.parseColor(ACCENT))
                 }
             }
 
@@ -113,13 +118,13 @@ object FloatingButtonManager {
         handler.post {
             val btn = buttonView ?: return@post
             btn.alpha = 1f
-            btn.setBackgroundColor(android.graphics.Color.parseColor("#DD4CAF50"))
+            btn.setBackgroundColor(android.graphics.Color.WHITE)
             handler.postDelayed({
                 btn.setBackgroundColor(android.graphics.Color.TRANSPARENT)
                 btn.background = android.graphics.drawable.GradientDrawable().apply {
                     shape = android.graphics.drawable.GradientDrawable.OVAL
                     setColor(android.graphics.Color.parseColor(
-                        if (MessageNotificationService.awayMode) "#DD9C27B0" else "#DD1B5E20"
+                        if (MessageNotificationService.awayMode) ACCENT_ACTIVE else ACCENT
                     ))
                 }
                 btn.alpha = 0.4f
@@ -131,7 +136,7 @@ object FloatingButtonManager {
         handler.post {
             buttonView?.background = android.graphics.drawable.GradientDrawable().apply {
                 shape = android.graphics.drawable.GradientDrawable.OVAL
-                setColor(android.graphics.Color.parseColor(if (on) "#DD9C27B0" else "#DD1B5E20"))
+                setColor(android.graphics.Color.parseColor(if (on) ACCENT_ACTIVE else ACCENT))
             }
             updateButtonText()
         }

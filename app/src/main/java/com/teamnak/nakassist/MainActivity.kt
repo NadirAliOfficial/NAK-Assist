@@ -10,6 +10,7 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.switchmaterial.SwitchMaterial
 
@@ -41,8 +42,19 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
 
-        findViewById<Button>(R.id.btnClientMessages).setOnClickListener {
-            startActivity(Intent(this, ClientsActivity::class.java))
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
+        bottomNav.selectedItemId = R.id.navSettings
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.navSettings -> true
+                R.id.navMessages -> {
+                    startActivity(Intent(this, ClientsActivity::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
+                    overridePendingTransition(0, 0)
+                    true
+                }
+                else -> false
+            }
         }
 
         val switchAway = findViewById<SwitchMaterial>(R.id.switchAwayMode)
