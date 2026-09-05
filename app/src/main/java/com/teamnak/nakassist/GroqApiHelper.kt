@@ -17,7 +17,7 @@ object GroqApiHelper {
         .build()
 
     private const val PREFS = "nak_settings"
-    private const val MODEL = "llama-3.3-70b-versatile"
+    private const val MODEL = "openai/gpt-oss-120b"
 
     private var keys: List<String> = emptyList()
     private var nextKeyIndex = 0
