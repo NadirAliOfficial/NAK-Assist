@@ -33,35 +33,6 @@
             android:gravity="center" />
     </LinearLayout>
 
-    <!-- Stay Online -->
-    <Button android:id="@+id/btnAutoRefreshToggle"
-        android:layout_width="match_parent" android:layout_height="50dp"
-        android:text="🟢 Stay Online: OFF"
-        android:backgroundTint="#1A2A1A"
-        android:textColor="#30D158" android:textSize="14sp"
-        android:layout_marginBottom="8dp"/>
-
-    <!-- Interval picker -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="horizontal" android:layout_marginBottom="16dp">
-        <Button android:id="@+id/btnInterval5"
-            android:layout_width="0dp" android:layout_weight="1" android:layout_height="36dp"
-            android:text="5s" android:backgroundTint="#2C2C2E"
-            android:textColor="#8E8E93" android:textSize="13sp" android:layout_marginEnd="4dp"/>
-        <Button android:id="@+id/btnInterval10"
-            android:layout_width="0dp" android:layout_weight="1" android:layout_height="36dp"
-            android:text="10s" android:backgroundTint="#2C2C2E"
-            android:textColor="#8E8E93" android:textSize="13sp" android:layout_marginEnd="4dp"/>
-        <Button android:id="@+id/btnInterval30"
-            android:layout_width="0dp" android:layout_weight="1" android:layout_height="36dp"
-            android:text="30s" android:backgroundTint="#2C2C2E"
-            android:textColor="#8E8E93" android:textSize="13sp" android:layout_marginEnd="4dp"/>
-        <Button android:id="@+id/btnInterval60"
-            android:layout_width="0dp" android:layout_weight="1" android:layout_height="36dp"
-            android:text="60s" android:backgroundTint="#2C2C2E"
-            android:textColor="#8E8E93" android:textSize="13sp"/>
-    </LinearLayout>
-
     <!-- Away Mode -->
     <Button android:id="@+id/btnAwayModeToggle"
         android:layout_width="match_parent" android:layout_height="50dp"

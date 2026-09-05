@@ -1,8 +1,6 @@
 package com.teamnak.nakassist
 
 import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.GestureDescription
-import android.graphics.Path
 import android.os.Handler
 import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
@@ -13,15 +11,11 @@ class AssistAccessibilityService : AccessibilityService() {
     companion object {
         var instance: AssistAccessibilityService? = null
         private val FIVERR_PACKAGES = setOf("com.fiverr.fiverr", "com.fiverr.android")
-
-        var stayOnlineEnabled = false
-        var stayOnlineInterval = 21 // seconds
     }
 
     private val handler = Handler(Looper.getMainLooper())
     private var flashDebounce: Runnable? = null
     private var lastScreenHash = 0
-    private var stayOnlineRunnable: Runnable? = null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -33,13 +27,9 @@ class AssistAccessibilityService : AccessibilityService() {
         // Restore persisted state
         val awayOn = PersistenceHelper.loadAwayMode(this)
         MessageNotificationService.awayMode = awayOn
-        stayOnlineInterval = PersistenceHelper.loadStayOnlineInterval(this)
-        val stayOn = PersistenceHelper.loadStayOnline(this)
 
         FloatingButtonManager.show(this)
         FloatingButtonManager.setAwayMode(awayOn)
-
-        if (stayOn) startStayOnline()
 
         // Re-register scheduled alarms
         AwayScheduleReceiver.registerAlarms(this)
@@ -111,55 +101,6 @@ Rules:
             if (result != null) return result
         }
         return null
-    }
-
-    // ── Stay Online ──────────────────────────────────────────────────────────
-
-    fun startStayOnline() {
-        stopStayOnline()
-        stayOnlineEnabled = true
-        PersistenceHelper.saveStayOnline(this, true)
-        FloatingButtonManager.setKeepScreenOn(true)
-        FloatingButtonManager.startCountdown(stayOnlineInterval)
-        scheduleNextPing()
-    }
-
-    fun stopStayOnline() {
-        stayOnlineEnabled = false
-        PersistenceHelper.saveStayOnline(this, false)
-        stayOnlineRunnable?.let { handler.removeCallbacks(it) }
-        stayOnlineRunnable = null
-        FloatingButtonManager.setKeepScreenOn(false)
-        FloatingButtonManager.stopCountdown()
-    }
-
-    private fun scheduleNextPing() {
-        if (!stayOnlineEnabled) return
-        stayOnlineRunnable = Runnable {
-            flashDebounce?.let { handler.removeCallbacks(it) }
-            performStayOnlineGesture()
-            if (stayOnlineEnabled) {
-                FloatingButtonManager.startCountdown(stayOnlineInterval)
-                scheduleNextPing()
-            }
-        }.also {
-            handler.postDelayed(it, stayOnlineInterval * 1000L)
-        }
-    }
-
-    private fun performStayOnlineGesture() {
-        val metrics = resources.displayMetrics
-        // Far-right edge, 15% from top — avoids notification shade (top), nav bar (bottom),
-        // and all Fiverr UI buttons (center). This area has no clickable elements.
-        val cx = metrics.widthPixels * 0.99f
-        val cy = metrics.heightPixels * 0.15f
-
-        val path = Path().apply { moveTo(cx, cy); lineTo(cx, cy + 2f) }
-        val gesture = GestureDescription.Builder()
-            .addStroke(GestureDescription.StrokeDescription(path, 0, 50))
-            .build()
-
-        dispatchGesture(gesture, null, null)
     }
 
     // ── AI modes ─────────────────────────────────────────────────────────────
@@ -269,7 +210,7 @@ Output ONLY the corrected text — nothing else.""",
     }
 
     fun openModeSelector() {
-        ModeSelector.show(this, this)
+        ModeSelector.show(this)
     }
 
     fun readScreen(): String? {
@@ -314,14 +255,12 @@ Output ONLY the corrected text — nothing else.""",
     }
 
     override fun onInterrupt() {
-        stopStayOnline()
         OverlayManager.dismiss()
         ModeSelector.dismiss()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        stopStayOnline()
         instance = null
         FloatingButtonManager.dismiss()
         OverlayManager.dismiss()

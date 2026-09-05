@@ -15,9 +15,7 @@ object FloatingButtonManager {
     private var windowManager: WindowManager? = null
     private var buttonView: TextView? = null
     private val handler = Handler(Looper.getMainLooper())
-    private var countdownRunnable: Runnable? = null
     private var longPressRunnable: Runnable? = null
-    private var countdownSeconds = 0
     private var unrepliedCount = 0
 
     fun show(context: Context) {
@@ -156,45 +154,8 @@ object FloatingButtonManager {
 
     private fun updateButtonText() {
         val btn = buttonView ?: return
-        // Don't override countdown text
-        if (countdownRunnable != null) return
         val icon = if (MessageNotificationService.awayMode) "💤" else "⚡"
         btn.text = if (unrepliedCount > 0) "$icon$unrepliedCount" else icon
-    }
-
-    fun startCountdown(intervalSeconds: Int) {
-        stopCountdown()
-        countdownSeconds = intervalSeconds
-        countdownRunnable = object : Runnable {
-            override fun run() {
-                if (countdownSeconds <= 0) {
-                    countdownSeconds = intervalSeconds
-                }
-                buttonView?.text = "$countdownSeconds"
-                countdownSeconds--
-                handler.postDelayed(this, 1000)
-            }
-        }.also { handler.post(it) }
-    }
-
-    fun stopCountdown() {
-        countdownRunnable?.let { handler.removeCallbacks(it) }
-        countdownRunnable = null
-        updateButtonText()
-    }
-
-    fun setKeepScreenOn(on: Boolean) {
-        handler.post {
-            val btn = buttonView ?: return@post
-            val wm = windowManager ?: return@post
-            val params = btn.layoutParams as? WindowManager.LayoutParams ?: return@post
-            if (on) {
-                params.flags = params.flags or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-            } else {
-                params.flags = params.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON.inv()
-            }
-            try { wm.updateViewLayout(btn, params) } catch (_: Exception) {}
-        }
     }
 
     fun dismiss() {

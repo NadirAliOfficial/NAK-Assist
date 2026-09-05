@@ -22,7 +22,7 @@ object ModeSelector {
         selectorView = null
     }
 
-    fun show(context: Context, service: AssistAccessibilityService) {
+    fun show(context: Context) {
         handler.post {
             dismissInternal()
             windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -37,52 +37,6 @@ object ModeSelector {
             ).apply { gravity = Gravity.BOTTOM }
 
             view.findViewById<android.widget.TextView>(R.id.tvCloseMode).setOnClickListener { dismiss() }
-
-            // Stay Online toggle
-            val btnStayOnline = view.findViewById<Button>(R.id.btnAutoRefreshToggle)
-            fun updateStayOnlineBtn() {
-                val on = AssistAccessibilityService.stayOnlineEnabled
-                val secs = AssistAccessibilityService.stayOnlineInterval
-                btnStayOnline.text = if (on) "🟢 Stay Online: ON (${secs}s)" else "🟢 Stay Online: OFF"
-                btnStayOnline.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                    android.graphics.Color.parseColor(if (on) "#0A3A0A" else "#1A2A1A")
-                )
-            }
-            updateStayOnlineBtn()
-            btnStayOnline.setOnClickListener {
-                if (AssistAccessibilityService.stayOnlineEnabled) service.stopStayOnline()
-                else service.startStayOnline()
-                updateStayOnlineBtn()
-            }
-
-            // Interval buttons
-            val intervals = mapOf(
-                R.id.btnInterval5  to 5,
-                R.id.btnInterval10 to 10,
-                R.id.btnInterval30 to 30,
-                R.id.btnInterval60 to 60
-            )
-            fun updateIntervalButtons() {
-                intervals.forEach { (id, secs) ->
-                    view.findViewById<Button>(id).backgroundTintList =
-                        android.content.res.ColorStateList.valueOf(
-                            android.graphics.Color.parseColor(
-                                if (AssistAccessibilityService.stayOnlineInterval == secs) "#1565C0"
-                                else "#2C2C2E"
-                            )
-                        )
-                }
-            }
-            updateIntervalButtons()
-            intervals.forEach { (id, secs) ->
-                view.findViewById<Button>(id).setOnClickListener {
-                    AssistAccessibilityService.stayOnlineInterval = secs
-                    PersistenceHelper.saveStayOnlineInterval(context, secs)
-                    if (AssistAccessibilityService.stayOnlineEnabled) service.startStayOnline()
-                    updateIntervalButtons()
-                    updateStayOnlineBtn()
-                }
-            }
 
             // Away Mode toggle
             val btnAway = view.findViewById<Button>(R.id.btnAwayModeToggle)
