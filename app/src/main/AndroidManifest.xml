@@ -74,6 +74,10 @@
             </intent-filter>
         </service>
 
+        <receiver
+            android:name=".CopyDraftReceiver"
+            android:exported="false" />
+
         <!-- Scheduled Away Mode + Daily Stats + Boot -->
         <receiver
             android:name=".AwayScheduleReceiver"

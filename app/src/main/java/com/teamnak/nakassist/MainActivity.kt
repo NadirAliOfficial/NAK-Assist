@@ -64,7 +64,8 @@ class MainActivity : AppCompatActivity() {
             FloatingButtonManager.setAwayMode(on)
             updateAwayBtn()
             Toast.makeText(this,
-                if (on) "Away Mode ON — auto-replies enabled" else "Away Mode OFF",
+                if (on) "Away Mode ON — drafts replies as notifications for you to review & send"
+                else "Away Mode OFF",
                 Toast.LENGTH_SHORT).show()
         }
 
