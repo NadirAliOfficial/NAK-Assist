@@ -1,5 +1,6 @@
 package com.teamnak.nakassist
 
+import android.content.Context
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -15,8 +16,34 @@ object GroqApiHelper {
         .readTimeout(20, TimeUnit.SECONDS)
         .build()
 
-    private const val API_KEY = "YOUR_GROQ_API_KEY_HERE"
+    private const val PREFS = "nak_settings"
     private const val MODEL = "llama-3.3-70b-versatile"
+
+    private var keys: List<String> = emptyList()
+    private var nextKeyIndex = 0
+
+    fun init(context: Context) {
+        keys = parseKeys(getSavedKeys(context))
+    }
+
+    fun getSavedKeys(context: Context): String =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("groq_keys", "") ?: ""
+
+    fun saveKeys(context: Context, commaSeparatedKeys: String) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putString("groq_keys", commaSeparatedKeys).apply()
+        keys = parseKeys(commaSeparatedKeys)
+    }
+
+    private fun parseKeys(raw: String): List<String> =
+        raw.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+
+    private fun nextKey(): String? {
+        if (keys.isEmpty()) return null
+        val key = keys[nextKeyIndex % keys.size]
+        nextKeyIndex++
+        return key
+    }
 
     fun ask(
         systemPrompt: String,
@@ -25,6 +52,11 @@ object GroqApiHelper {
         onResult: (String) -> Unit,
         onError: (String) -> Unit
     ) {
+        val apiKey = nextKey()
+        if (apiKey == null) {
+            onError("No Groq API key configured — add one in the app (console.groq.com)")
+            return
+        }
         val body = JSONObject().apply {
             put("model", MODEL)
             put("max_tokens", maxTokens)
@@ -43,7 +75,7 @@ object GroqApiHelper {
         val request = Request.Builder()
             .url("https://api.groq.com/openai/v1/chat/completions")
             .post(body.toString().toRequestBody("application/json".toMediaType()))
-            .addHeader("Authorization", "Bearer $API_KEY")
+            .addHeader("Authorization", "Bearer $apiKey")
             .addHeader("Content-Type", "application/json")
             .build()
 
