@@ -17,6 +17,7 @@ object FloatingButtonManager {
     private val handler = Handler(Looper.getMainLooper())
     private var longPressRunnable: Runnable? = null
     private var unrepliedCount = 0
+    private var keepScreenOnEnabled = false
 
     fun show(context: Context) {
         if (buttonView != null) return
@@ -156,6 +157,27 @@ object FloatingButtonManager {
         val btn = buttonView ?: return
         val icon = if (MessageNotificationService.awayMode) "💤" else "⚡"
         btn.text = if (unrepliedCount > 0) "$icon$unrepliedCount" else icon
+    }
+
+    // ── Keep Screen On ───────────────────────────────────────────────────
+    // Purely local — just stops the screen from sleeping. No taps sent
+    // anywhere, no interaction with Fiverr at all.
+
+    fun isKeepScreenOnEnabled(): Boolean = keepScreenOnEnabled
+
+    fun setKeepScreenOn(on: Boolean) {
+        keepScreenOnEnabled = on
+        handler.post {
+            val btn = buttonView ?: return@post
+            val wm = windowManager ?: return@post
+            val params = btn.layoutParams as? WindowManager.LayoutParams ?: return@post
+            if (on) {
+                params.flags = params.flags or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            } else {
+                params.flags = params.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON.inv()
+            }
+            try { wm.updateViewLayout(btn, params) } catch (_: Exception) {}
+        }
     }
 
     fun dismiss() {

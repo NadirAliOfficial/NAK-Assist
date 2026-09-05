@@ -20,6 +20,18 @@ object PersistenceHelper {
             .getBoolean("away_mode", false)
     }
 
+    // ── Keep Screen On ────────────────────────────────────────────────────
+
+    fun saveKeepScreenOn(ctx: Context, on: Boolean) {
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putBoolean("keep_screen_on", on).apply()
+    }
+
+    fun loadKeepScreenOn(ctx: Context): Boolean {
+        return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getBoolean("keep_screen_on", false)
+    }
+
     // ── Conversation Cache ────────────────────────────────────────────────
 
     fun saveConversations(ctx: Context, data: Map<String, List<String>>) {

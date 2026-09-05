@@ -30,6 +30,7 @@ class AssistAccessibilityService : AccessibilityService() {
 
         FloatingButtonManager.show(this)
         FloatingButtonManager.setAwayMode(awayOn)
+        FloatingButtonManager.setKeepScreenOn(PersistenceHelper.loadKeepScreenOn(this))
 
         // Re-register scheduled alarms
         AwayScheduleReceiver.registerAlarms(this)

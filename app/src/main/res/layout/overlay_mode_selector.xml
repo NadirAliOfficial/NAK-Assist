@@ -38,6 +38,14 @@
         android:layout_width="match_parent" android:layout_height="50dp"
         android:text="💤 Away Mode: OFF"
         android:backgroundTint="#2C1F3A"
-        android:textColor="#BF5AF2" android:textSize="14sp"/>
+        android:textColor="#BF5AF2" android:textSize="14sp"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Keep Screen On — local only, no interaction with Fiverr -->
+    <Button android:id="@+id/btnKeepScreenOn"
+        android:layout_width="match_parent" android:layout_height="50dp"
+        android:text="🔆 Keep Screen On: OFF"
+        android:backgroundTint="#2C2C2E"
+        android:textColor="#8E8E93" android:textSize="14sp"/>
 
 </LinearLayout>
