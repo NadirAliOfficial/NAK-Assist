@@ -92,6 +92,7 @@ class MessageNotificationService : NotificationListenerService() {
                     else -> {
                         val finalText = ReplyComposer.fixLinks(clean)
                         StatsTracker.recordReply(0L)
+                        ConversationCache.setDraft(buyerName, finalText)
                         showDraftNotification(buyerName, finalText)
                     }
                 }

@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.setPadding
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 /**
  * Lists every Fiverr client with a saved conversation (captured passively from
@@ -36,6 +37,21 @@ class ClientsActivity : AppCompatActivity() {
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
+        }
+
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
+        bottomNav.selectedItemId = R.id.navMessages
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.navMessages -> true
+                R.id.navSettings -> {
+                    startActivity(Intent(this, MainActivity::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
+                    overridePendingTransition(0, 0)
+                    true
+                }
+                else -> false
+            }
         }
     }
 
@@ -91,7 +107,7 @@ class ClientsActivity : AppCompatActivity() {
                 setTextColor(android.graphics.Color.WHITE)
                 background = android.graphics.drawable.GradientDrawable().apply {
                     cornerRadius = 8 * density
-                    setColor(android.graphics.Color.parseColor("#1B5E20"))
+                    setColor(android.graphics.Color.parseColor("#4F8CFF"))
                 }
                 setPadding((6 * density).toInt(), (2 * density).toInt(), (6 * density).toInt(), (2 * density).toInt())
             }

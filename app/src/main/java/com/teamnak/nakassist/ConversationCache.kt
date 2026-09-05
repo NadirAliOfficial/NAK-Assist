@@ -21,6 +21,9 @@ object ConversationCache {
     // keys with a client message that hasn't been opened/copied yet
     private val unread = mutableSetOf<String>()
 
+    // key -> latest Away Mode AI draft reply for that client, shown inline on the thread screen
+    private val drafts = mutableMapOf<String, String>()
+
     fun init(context: Context) {
         ctx = context.applicationContext
         val saved = PersistenceHelper.loadConversations(context)
@@ -30,6 +33,8 @@ object ConversationCache {
         displayNames.putAll(PersistenceHelper.loadDisplayNames(context))
         unread.clear()
         unread.addAll(PersistenceHelper.loadUnread(context))
+        drafts.clear()
+        drafts.putAll(PersistenceHelper.loadDrafts(context))
     }
 
     fun addMessage(buyerName: String, message: String) {
@@ -79,6 +84,21 @@ object ConversationCache {
         if (unread.remove(key)) persistMeta()
     }
 
+    // ── Away Mode draft (shown inline on the thread screen) ──────────────────
+
+    fun setDraft(buyerName: String, draft: String) {
+        val key = buyerName.trim().lowercase()
+        if (key.isBlank()) return
+        drafts[key] = draft
+        ctx?.let { PersistenceHelper.saveDrafts(it, drafts) }
+    }
+
+    fun getDraft(key: String): String? = drafts[key]
+
+    fun clearDraft(key: String) {
+        if (drafts.remove(key) != null) ctx?.let { PersistenceHelper.saveDrafts(it, drafts) }
+    }
+
     private fun persistMeta() {
         val c = ctx ?: return
         PersistenceHelper.saveDisplayNames(c, displayNames)
@@ -89,10 +109,12 @@ object ConversationCache {
         cache.clear()
         displayNames.clear()
         unread.clear()
+        drafts.clear()
         ctx?.let {
             PersistenceHelper.saveConversations(it, emptyMap())
             PersistenceHelper.saveDisplayNames(it, emptyMap())
             PersistenceHelper.saveUnread(it, emptySet())
+            PersistenceHelper.saveDrafts(it, emptyMap())
         }
     }
 }

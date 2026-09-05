@@ -24,17 +24,19 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:label="Settings" />
+
+        <activity
+            android:name=".ClientsActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity
-            android:name=".ClientsActivity"
-            android:exported="false"
-            android:label="Client Messages" />
 
         <activity
             android:name=".ThreadActivity"
