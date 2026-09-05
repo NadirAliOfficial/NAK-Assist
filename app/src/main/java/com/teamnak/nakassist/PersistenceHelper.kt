@@ -20,28 +20,6 @@ object PersistenceHelper {
             .getBoolean("away_mode", false)
     }
 
-    // ── Stay Online ───────────────────────────────────────────────────────
-
-    fun saveStayOnline(ctx: Context, on: Boolean) {
-        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putBoolean("stay_online", on).apply()
-    }
-
-    fun loadStayOnline(ctx: Context): Boolean {
-        return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getBoolean("stay_online", false)
-    }
-
-    fun saveStayOnlineInterval(ctx: Context, seconds: Int) {
-        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putInt("stay_online_interval", seconds).apply()
-    }
-
-    fun loadStayOnlineInterval(ctx: Context): Int {
-        return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getInt("stay_online_interval", 21)
-    }
-
     // ── Conversation Cache ────────────────────────────────────────────────
 
     fun saveConversations(ctx: Context, data: Map<String, List<String>>) {
