@@ -56,6 +56,23 @@ object ModeSelector {
                 updateAwayBtn()
             }
 
+            // Keep Screen On toggle — just prevents the screen from sleeping
+            val btnKeepScreenOn = view.findViewById<Button>(R.id.btnKeepScreenOn)
+            fun updateKeepScreenOnBtn() {
+                val on = FloatingButtonManager.isKeepScreenOnEnabled()
+                btnKeepScreenOn.text = if (on) "🔆 Keep Screen On: ON" else "🔆 Keep Screen On: OFF"
+                btnKeepScreenOn.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                    android.graphics.Color.parseColor(if (on) "#1A2A1A" else "#2C2C2E")
+                )
+            }
+            updateKeepScreenOnBtn()
+            btnKeepScreenOn.setOnClickListener {
+                val on = !FloatingButtonManager.isKeepScreenOnEnabled()
+                FloatingButtonManager.setKeepScreenOn(on)
+                PersistenceHelper.saveKeepScreenOn(context, on)
+                updateKeepScreenOnBtn()
+            }
+
             selectorView = view
             try {
                 windowManager?.addView(view, params)
