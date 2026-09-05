@@ -39,6 +39,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
 
+        findViewById<Button>(R.id.btnClientMessages).setOnClickListener {
+            startActivity(Intent(this, ClientsActivity::class.java))
+        }
+
         val btnAway = findViewById<Button>(R.id.btnAwayMode)
         fun updateAwayBtn() {
             val on = MessageNotificationService.awayMode

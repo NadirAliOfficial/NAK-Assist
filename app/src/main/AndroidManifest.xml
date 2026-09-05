@@ -31,6 +31,16 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ClientsActivity"
+            android:exported="false"
+            android:label="Client Messages" />
+
+        <activity
+            android:name=".ThreadActivity"
+            android:exported="false"
+            android:label="Conversation" />
+
         <service
             android:name=".AssistAccessibilityService"
             android:exported="true"

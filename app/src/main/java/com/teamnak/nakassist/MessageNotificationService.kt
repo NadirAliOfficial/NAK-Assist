@@ -21,6 +21,14 @@ class MessageNotificationService : NotificationListenerService() {
         var pendingMessage = ""   // last buyer message from notification
     }
 
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        // Independent of the accessibility service so the notification-only
+        // (read-only, no auto-reply) setup works on its own.
+        ConversationCache.init(applicationContext)
+        StatsTracker.init(applicationContext)
+    }
+
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         if (sbn.packageName !in FIVERR_PACKAGES) return
 

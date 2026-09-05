@@ -1,0 +1,49 @@
+name: Build debug APK
+
+on:
+  push:
+    branches:
+      - "claude/**"
+      - main
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Locate APK
+        id: apk
+        run: echo "path=$(find app/build/outputs/apk/debug -name '*.apk' | head -n1)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nak-assist-debug-apk
+          path: ${{ steps.apk.outputs.path }}
+
+      - name: Publish downloadable release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Debug build ${{ github.run_number }}
+          prerelease: true
+          files: ${{ steps.apk.outputs.path }}
