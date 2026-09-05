@@ -71,6 +71,34 @@ object PersistenceHelper {
         } catch (_: Exception) { emptyMap() }
     }
 
+    fun saveDisplayNames(ctx: Context, data: Map<String, String>) {
+        val root = JSONObject()
+        data.forEach { (key, name) -> root.put(key, name) }
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putString("display_names", root.toString()).apply()
+    }
+
+    fun loadDisplayNames(ctx: Context): Map<String, String> {
+        val raw = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString("display_names", null) ?: return emptyMap()
+        return try {
+            val root = JSONObject(raw)
+            val result = mutableMapOf<String, String>()
+            root.keys().forEach { key -> result[key] = root.getString(key) }
+            result
+        } catch (_: Exception) { emptyMap() }
+    }
+
+    fun saveUnread(ctx: Context, keys: Set<String>) {
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putStringSet("unread_buyers", keys).apply()
+    }
+
+    fun loadUnread(ctx: Context): Set<String> {
+        return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getStringSet("unread_buyers", emptySet()) ?: emptySet()
+    }
+
     // ── Quick Replies ─────────────────────────────────────────────────────
 
     fun saveQuickReplies(ctx: Context, replies: List<String>) {

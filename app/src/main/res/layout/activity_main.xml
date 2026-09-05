@@ -104,6 +104,17 @@
             xmlns:app="http://schemas.android.com/apk/res-auto" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnClientMessages"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="💬 Client Messages"
+            android:backgroundTint="#1565C0"
+            android:textColor="@android:color/white"
+            android:layout_marginBottom="8dp"
+            app:cornerRadius="12dp"
+            xmlns:app="http://schemas.android.com/apk/res-auto" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnAwayMode"
             android:layout_width="match_parent"
             android:layout_height="52dp"
