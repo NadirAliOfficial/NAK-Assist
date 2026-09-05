@@ -28,7 +28,7 @@ class AwayModeTileService : TileService() {
         val isOn = MessageNotificationService.awayMode
         tile.state = if (isOn) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
         tile.label = if (isOn) "Away: ON" else "Away: OFF"
-        tile.subtitle = if (isOn) "Auto-replying" else "Manual"
+        tile.subtitle = if (isOn) "Drafting replies" else "Manual"
         tile.updateTile()
     }
 }

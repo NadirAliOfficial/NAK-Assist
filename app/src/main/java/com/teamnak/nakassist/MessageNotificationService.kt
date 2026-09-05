@@ -3,30 +3,34 @@ package com.teamnak.nakassist
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.Intent
 import android.os.Build
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationCompat
 
+/**
+ * Reads Fiverr message notifications only — never touches Fiverr's UI or sends anything.
+ * Feeds the client-message aggregator (ConversationCache) and, when Away Mode is on,
+ * asks Groq for a draft reply and posts it as a notification with a "Copy reply" action
+ * so Nadir reviews and sends it himself from the Fiverr app.
+ */
 class MessageNotificationService : NotificationListenerService() {
 
     companion object {
         var awayMode = false
         private val FIVERR_PACKAGES = setOf("com.fiverr.fiverr", "com.fiverr.android")
-        private var lastAwayReplyTime = 0L
-        private const val AWAY_REPLY_COOLDOWN_MS = 8_000L
-
-        // Set when Away Mode triggers — tells accessibility service to read & reply once Fiverr opens
-        var pendingAwayTrigger = false
-        var pendingMessage = ""   // last buyer message from notification
+        private var lastDraftTime = 0L
+        private const val DRAFT_COOLDOWN_MS = 8_000L
     }
 
     override fun onListenerConnected() {
         super.onListenerConnected()
         // Independent of the accessibility service so the notification-only
-        // (read-only, no auto-reply) setup works on its own.
+        // (read-only aggregator + draft-only Away Mode) setup works on its own.
         ConversationCache.init(applicationContext)
         StatsTracker.init(applicationContext)
+        GroqApiHelper.init(applicationContext)
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -37,64 +41,94 @@ class MessageNotificationService : NotificationListenerService() {
         val text  = extras.getCharSequence("android.text")?.toString() ?: ""
         if (text.isBlank()) return
 
-        // Ignore notification echoes of our own sent replies (prevents infinite reply loop)
-        val sinceLastSent = System.currentTimeMillis() - AssistAccessibilityService.lastSentTimestamp
-        if (sinceLastSent < 15_000) {
-            android.util.Log.e("NAK", "Ignoring notification — likely echo of our own reply (${sinceLastSent}ms ago)")
-            return
-        }
-
-        android.util.Log.e("NAK", "Notification: pkg=${sbn.packageName} title=$title text=$text awayMode=$awayMode")
-
         // Track stats & cache conversation
         StatsTracker.recordMessage()
         ConversationCache.addMessage(title, text)
-        AssistAccessibilityService.lastNotificationTimestamp = System.currentTimeMillis()
 
         // Increment unreplied badge
         FloatingButtonManager.incrementUnreplied()
         FloatingButtonManager.flash()
 
-        // Show a brief overlay so the user knows a message arrived
+        // Show a brief overlay so the user knows a message arrived (only if the
+        // accessibility service — and therefore the overlay — is running)
         AssistAccessibilityService.instance?.let { service ->
             OverlayManager.show(service, "💬 $title: $text", showPaste = false)
         }
 
         if (awayMode) {
             val now = System.currentTimeMillis()
-            val sinceLastReply = now - lastAwayReplyTime
-            android.util.Log.e("NAK", "Away mode ON — sinceLastReply=${sinceLastReply}ms cooldown=${AWAY_REPLY_COOLDOWN_MS}ms")
-            if (sinceLastReply < AWAY_REPLY_COOLDOWN_MS) {
-                android.util.Log.e("NAK", "Cooldown active — skipping")
-                return
+            if (now - lastDraftTime >= DRAFT_COOLDOWN_MS) {
+                lastDraftTime = now
+                generateDraftAndNotify(title, text)
             }
-            lastAwayReplyTime = now
-
-            pendingAwayTrigger = true
-            pendingMessage = text
-            android.util.Log.e("NAK", "pendingAwayTrigger set, opening Fiverr. svcInstance=${AssistAccessibilityService.instance != null}")
-            try {
-                sbn.notification.contentIntent?.send(applicationContext, 0, null)
-                android.util.Log.e("NAK", "contentIntent sent")
-            } catch (e: Exception) {
-                android.util.Log.e("NAK", "contentIntent failed: ${e.message}, trying launchIntent")
-                applicationContext.packageManager
-                    .getLaunchIntentForPackage(sbn.packageName)
-                    ?.apply { addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK) }
-                    ?.let { applicationContext.startActivity(it) }
-            }
-
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                android.util.Log.e("NAK", "Fallback fired — pendingAwayTrigger=$pendingAwayTrigger svc=${AssistAccessibilityService.instance != null}")
-                if (pendingAwayTrigger) {
-                    pendingAwayTrigger = false
-                    AssistAccessibilityService.instance?.startAwayReply()
-                        ?: android.util.Log.e("NAK", "startAwayReply FAILED — accessibility service is null!")
-                }
-            }, 2500)
         }
 
         showSystemNotification(title, text)
+    }
+
+    /** Away Mode: draft a reply and notify Nadir to review & send — never sends anything itself. */
+    private fun generateDraftAndNotify(buyerName: String, message: String, retryCount: Int = 0) {
+        val history = ConversationCache.getContext(buyerName)
+        val userContent = buildString {
+            if (!history.isNullOrBlank()) {
+                append("Conversation history:\n")
+                append(history)
+                append("\n\n")
+            }
+            append("Client's latest message: \"$message\"\n\nWrite Nadir's reply:")
+        }
+
+        GroqApiHelper.ask(
+            systemPrompt = ReplyComposer.personaPrompt(),
+            userContent = userContent,
+            maxTokens = 120,
+            onResult = { reply ->
+                val clean = reply.trim()
+                when {
+                    clean.isBlank() || clean.length < 3 -> {}
+                    ReplyComposer.containsBannedContent(clean) && retryCount < 2 ->
+                        generateDraftAndNotify(buyerName, message, retryCount + 1)
+                    ReplyComposer.containsBannedContent(clean) -> {}
+                    else -> {
+                        val finalText = ReplyComposer.fixLinks(clean)
+                        StatsTracker.recordReply(0L)
+                        showDraftNotification(buyerName, finalText)
+                    }
+                }
+            },
+            onError = { }
+        )
+    }
+
+    private fun showDraftNotification(buyerName: String, draft: String) {
+        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        val channelId = "nak_assist_drafts"
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            manager.createNotificationChannel(
+                NotificationChannel(channelId, "NAK Assist Draft Replies", NotificationManager.IMPORTANCE_HIGH)
+            )
+        }
+
+        val copyIntent = Intent(this, CopyDraftReceiver::class.java).apply {
+            putExtra(CopyDraftReceiver.EXTRA_TEXT, draft)
+        }
+        val copyPending = PendingIntent.getBroadcast(
+            this, buyerName.hashCode(), copyIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("✍️ Draft reply for $buyerName")
+            .setContentText(draft)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(draft))
+            .addAction(0, "Copy reply", copyPending)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .build()
+
+        manager.notify(("draft_$buyerName").hashCode(), notification)
     }
 
     private fun showSystemNotification(title: String, text: String) {
