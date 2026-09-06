@@ -84,6 +84,19 @@ object ConversationCache {
         if (unread.remove(key)) persistMeta()
     }
 
+    /**
+     * Wipes a client's thread after it's been copied out, so the box only ever holds
+     * messages that haven't been copied yet — not the full history forever.
+     */
+    fun clearThread(key: String) {
+        cache[key]?.clear()
+        drafts.remove(key)
+        ctx?.let {
+            PersistenceHelper.saveConversations(it, cache)
+            PersistenceHelper.saveDrafts(it, drafts)
+        }
+    }
+
     // ── Away Mode draft (shown inline on the thread screen) ──────────────────
 
     fun setDraft(buyerName: String, draft: String) {
