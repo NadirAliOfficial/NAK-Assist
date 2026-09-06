@@ -1,20 +1,26 @@
 package com.teamnak.nakassist
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.setPadding
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.button.MaterialButton
 
 /**
  * Lists every Fiverr client with a saved conversation (captured passively from
  * notifications — nothing here reads or sends anything on Fiverr's behalf).
- * Tap a client to see the full thread and copy it in one go for pasting elsewhere.
+ * Tap a client to see the full thread, or hit Copy right on the row to grab
+ * everything for that client without opening it.
  */
 class ClientsActivity : AppCompatActivity() {
 
@@ -69,12 +75,35 @@ class ClientsActivity : AppCompatActivity() {
         keys.forEach { key -> listContainer.addView(buildRow(key, density)) }
     }
 
+    /** Copies everything for this client, then clears the thread — same as the in-thread Copy All. */
+    private fun copyAllForClient(key: String) {
+        val thread = ConversationCache.threadFor(key)
+        if (thread.isBlank()) {
+            Toast.makeText(this, "No messages to copy", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val displayName = ConversationCache.displayNameFor(key)
+        val formatted = "Conversation with $displayName:\n\n$thread"
+        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        cm.setPrimaryClip(ClipData.newPlainText("Fiverr conversation", formatted))
+        ConversationCache.markRead(key)
+        ConversationCache.clearThread(key)
+        Toast.makeText(this, "Copied — paste it into Claude", Toast.LENGTH_SHORT).show()
+        render()
+    }
+
     private fun buildRow(key: String, density: Float): View {
         val unread = ConversationCache.isUnread(key)
 
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
+        val outerRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
             setPadding((16 * density).toInt())
+        }
+
+        val textColumn = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             setOnClickListener {
                 startActivity(Intent(this@ClientsActivity, ThreadActivity::class.java)
                     .putExtra(ThreadActivity.EXTRA_BUYER_KEY, key))
@@ -124,8 +153,25 @@ class ClientsActivity : AppCompatActivity() {
             setPadding(0, (4 * density).toInt(), 0, 0)
         }
 
-        row.addView(nameRow)
-        row.addView(preview)
+        textColumn.addView(nameRow)
+        textColumn.addView(preview)
+
+        val copyButton = MaterialButton(this).apply {
+            text = "Copy"
+            textSize = 12f
+            isAllCaps = false
+            insetTop = 0
+            insetBottom = 0
+            setPadding((14 * density).toInt(), 0, (14 * density).toInt(), 0)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, (36 * density).toInt()
+            ).apply { marginStart = (12 * density).toInt() }
+            isEnabled = previewText.isNotBlank()
+            setOnClickListener { copyAllForClient(key) }
+        }
+
+        outerRow.addView(textColumn)
+        outerRow.addView(copyButton)
 
         val divider = View(this).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (1 * density).toInt())
@@ -133,7 +179,7 @@ class ClientsActivity : AppCompatActivity() {
         }
 
         val wrapper = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        wrapper.addView(row)
+        wrapper.addView(outerRow)
         wrapper.addView(divider)
         return wrapper
     }
