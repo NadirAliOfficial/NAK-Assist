@@ -114,8 +114,9 @@ class ClientsActivity : AppCompatActivity() {
             nameRow.addView(badge)
         }
 
+        val previewText = ConversationCache.lastMessagePreview(key)
         val preview = TextView(this).apply {
-            text = ConversationCache.lastMessagePreview(key)
+            text = previewText.ifBlank { "No new messages" }
             textSize = 13f
             maxLines = 1
             ellipsize = android.text.TextUtils.TruncateAt.END

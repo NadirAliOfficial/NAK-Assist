@@ -38,14 +38,20 @@ class ThreadActivity : AppCompatActivity() {
             findViewById<TextView>(R.id.tvDraft).text = draft
             findViewById<View>(R.id.btnCopyDraft).setOnClickListener {
                 copyToClipboard("Draft reply", draft)
+                ConversationCache.clearDraft(key)
+                cardDraft.visibility = View.GONE
             }
         } else {
             cardDraft.visibility = View.GONE
         }
 
+        // Copy All hands off everything currently in the box, then clears it — the
+        // thread only ever holds messages that haven't been copied out yet.
         findViewById<View>(R.id.btnCopyAll).setOnClickListener {
             val formatted = "Conversation with $displayName:\n\n$thread"
             copyToClipboard("Fiverr conversation", formatted)
+            ConversationCache.clearThread(key)
+            finish()
         }
     }
 
