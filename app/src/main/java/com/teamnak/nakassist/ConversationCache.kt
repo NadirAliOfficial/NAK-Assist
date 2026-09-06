@@ -6,6 +6,7 @@ object ConversationCache {
 
     private const val MAX_BUYERS = 20
     private const val MAX_MESSAGES_PER_BUYER = 30
+    private const val MAX_MESSAGE_LENGTH = 6000 // was 400 — cut off real client briefs
 
     private var ctx: Context? = null
 
@@ -42,12 +43,12 @@ object ConversationCache {
         if (key.isBlank()) return
         displayNames[key] = buyerName.trim()
         unread.add(key)
-        addToCache(key, "Client: ${message.take(400)}")
+        addToCache(key, "Client: ${message.take(MAX_MESSAGE_LENGTH)}")
         persistMeta()
     }
 
     fun addReply(buyerName: String, reply: String) {
-        addToCache(buyerName.trim().lowercase(), "Nadir: ${reply.take(400)}")
+        addToCache(buyerName.trim().lowercase(), "Nadir: ${reply.take(MAX_MESSAGE_LENGTH)}")
     }
 
     private fun addToCache(key: String, entry: String) {

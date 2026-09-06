@@ -38,7 +38,7 @@ class MessageNotificationService : NotificationListenerService() {
 
         val extras = sbn.notification.extras
         val title = extras.getString("android.title") ?: ""
-        val text  = extras.getCharSequence("android.text")?.toString() ?: ""
+        val text = extractFullText(extras)
         if (text.isBlank()) return
 
         // Track stats & cache conversation
@@ -64,6 +64,23 @@ class MessageNotificationService : NotificationListenerService() {
         }
 
         showSystemNotification(title, text)
+    }
+
+    /**
+     * "android.text" is just the collapsed one-line preview and gets cut off for long
+     * messages. Prefer the untruncated versions Android/Fiverr also attach:
+     * "android.textLines" (multiple stacked messages, e.g. two arrived close together)
+     * and "android.bigText" (the full expanded single message), falling back to the
+     * short preview only if neither is present.
+     */
+    private fun extractFullText(extras: android.os.Bundle): String {
+        val lines = extras.getCharSequenceArray("android.textLines")
+        if (lines != null && lines.isNotEmpty()) {
+            return lines.joinToString("\n") { it.toString() }
+        }
+        val bigText = extras.getCharSequence("android.bigText")?.toString()
+        if (!bigText.isNullOrBlank()) return bigText
+        return extras.getCharSequence("android.text")?.toString() ?: ""
     }
 
     /** Away Mode: draft a reply and notify Nadir to review & send — never sends anything itself. */
