@@ -1,5 +1,6 @@
 package com.teamnak.nakassist
 
+import android.content.Context
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -10,13 +11,46 @@ import java.util.concurrent.TimeUnit
 
 object GroqApiHelper {
 
+    private const val PREFS = "nak_settings"
+    private const val KEYS_PREF = "groq_api_keys"
+
     private val client = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS)
         .build()
 
-    private const val API_KEY = "YOUR_GROQ_API_KEY_HERE"
     private const val MODEL = "llama-3.3-70b-versatile"
+
+    private var apiKeys: List<String> = emptyList()
+    private var keyIndex = 0
+
+    fun init(context: Context) {
+        apiKeys = parseKeys(getSavedKeys(context))
+    }
+
+    fun saveKeys(context: Context, keys: String) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putString(KEYS_PREF, keys).apply()
+        apiKeys = parseKeys(keys)
+        keyIndex = 0
+    }
+
+    fun getSavedKeys(context: Context): String {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString(KEYS_PREF, "") ?: ""
+    }
+
+    private fun parseKeys(raw: String): List<String> =
+        raw.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+
+    // Rotate across multiple keys so a single free-tier Groq key's rate limit
+    // doesn't stall every request.
+    private fun nextKey(): String? {
+        if (apiKeys.isEmpty()) return null
+        val key = apiKeys[keyIndex % apiKeys.size]
+        keyIndex++
+        return key
+    }
 
     fun ask(
         systemPrompt: String,
@@ -25,6 +59,12 @@ object GroqApiHelper {
         onResult: (String) -> Unit,
         onError: (String) -> Unit
     ) {
+        val apiKey = nextKey()
+        if (apiKey == null) {
+            onError("No Groq API key set — add one in the NAK Assist app")
+            return
+        }
+
         val body = JSONObject().apply {
             put("model", MODEL)
             put("max_tokens", maxTokens)
@@ -43,7 +83,7 @@ object GroqApiHelper {
         val request = Request.Builder()
             .url("https://api.groq.com/openai/v1/chat/completions")
             .post(body.toString().toRequestBody("application/json".toMediaType()))
-            .addHeader("Authorization", "Bearer $API_KEY")
+            .addHeader("Authorization", "Bearer $apiKey")
             .addHeader("Content-Type", "application/json")
             .build()
 
