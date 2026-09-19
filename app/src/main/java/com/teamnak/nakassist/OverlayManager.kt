@@ -4,10 +4,12 @@ import android.content.Context
 import android.graphics.PixelFormat
 import android.os.Handler
 import android.os.Looper
+import android.text.InputType
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 
 object OverlayManager {
@@ -30,7 +32,8 @@ object OverlayManager {
             windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
             val view = LayoutInflater.from(context).inflate(R.layout.overlay_response, null)
 
-            view.findViewById<TextView>(R.id.tvResponse).text = text
+            val etResponse = view.findViewById<EditText>(R.id.etResponse)
+            etResponse.setText(text)
             view.findViewById<TextView>(R.id.tvClose).setOnClickListener { dismiss() }
 
             val tvRetry = view.findViewById<TextView>(R.id.tvRetry)
@@ -42,29 +45,52 @@ object OverlayManager {
             }
 
             val btnSend = view.findViewById<Button>(R.id.btnPaste)
-            if (showPaste && onPaste != null) {
+            val editable = showPaste && onPaste != null
+            if (editable) {
                 btnSend.visibility = android.view.View.VISIBLE
-                btnSend.setOnClickListener { onPaste(text); dismiss() }
+                btnSend.setOnClickListener {
+                    onPaste?.invoke(etResponse.text.toString())
+                    dismiss()
+                }
+                etResponse.isFocusable = true
+                etResponse.isFocusableInTouchMode = true
+                etResponse.inputType = InputType.TYPE_CLASS_TEXT or
+                        InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+                        InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
             } else {
                 btnSend.visibility = android.view.View.GONE
+                etResponse.isFocusable = false
+                etResponse.isFocusableInTouchMode = false
+                etResponse.inputType = InputType.TYPE_NULL
             }
+
+            // Editable overlays need window focus to accept typing; read-only
+            // banners (loading/notification previews) stay non-focusable so they
+            // never steal input from the Fiverr app underneath.
+            val baseFlags = WindowManager.LayoutParams.FLAG_SECURE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+            val flags = if (editable) baseFlags else baseFlags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
 
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_SECURE,
+                flags,
                 PixelFormat.TRANSLUCENT
             ).apply {
                 gravity = Gravity.BOTTOM
                 y = 0
+                softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
             }
 
             overlayView = view
             try { windowManager?.addView(view, params) } catch (_: Exception) {}
 
-            hideRunnable = Runnable { dismiss() }
-            handler.postDelayed(hideRunnable!!, 30000)
+            // Don't auto-dismiss while the user might still be editing the draft.
+            if (!editable) {
+                hideRunnable = Runnable { dismiss() }
+                handler.postDelayed(hideRunnable!!, 30000)
+            }
         }
     }
 

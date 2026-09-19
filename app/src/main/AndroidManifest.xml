@@ -52,26 +52,12 @@
             </intent-filter>
         </service>
 
-        <!-- Quick Settings Tile for Away Mode -->
-        <service
-            android:name=".AwayModeTileService"
-            android:exported="true"
-            android:icon="@android:drawable/ic_lock_idle_alarm"
-            android:label="NAK Away Mode"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
-            </intent-filter>
-        </service>
-
-        <!-- Scheduled Away Mode + Daily Stats + Boot -->
+        <!-- Daily Stats notification + Boot re-registration -->
         <receiver
-            android:name=".AwayScheduleReceiver"
+            android:name=".DailyStatsReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="com.teamnak.nakassist.AWAY_ON" />
-                <action android:name="com.teamnak.nakassist.AWAY_OFF" />
                 <action android:name="com.teamnak.nakassist.DAILY_STATS" />
             </intent-filter>
         </receiver>

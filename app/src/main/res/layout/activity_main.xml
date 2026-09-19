@@ -103,17 +103,6 @@
             app:cornerRadius="12dp"
             xmlns:app="http://schemas.android.com/apk/res-auto" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnAwayMode"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:text="💤 Away Mode: OFF"
-            android:backgroundTint="#555555"
-            android:textColor="@android:color/white"
-            android:layout_marginBottom="24dp"
-            app:cornerRadius="12dp"
-            xmlns:app="http://schemas.android.com/apk/res-auto" />
-
         <!-- API Keys -->
         <TextView
             android:layout_width="wrap_content"
@@ -170,7 +159,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="⚡ Tap = Smart Reply  |  ⚡⚡ Double Tap = More Modes\n💡 Add Away Mode tile from Quick Settings"
+            android:text="⚡ Tap = Smart Reply  |  Long-press = More Modes"
             android:textSize="11sp"
             android:textColor="#555555"
             android:gravity="center"

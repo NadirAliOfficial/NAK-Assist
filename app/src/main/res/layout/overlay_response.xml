@@ -47,15 +47,20 @@
             android:gravity="center" />
     </LinearLayout>
 
-    <!-- Reply text -->
-    <TextView
-        android:id="@+id/tvResponse"
+    <!-- Reply text — editable so the user can tweak the draft before pasting -->
+    <EditText
+        android:id="@+id/etResponse"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="#331C1C1E"
+        android:padding="10dp"
         android:text=""
         android:textColor="#F2F2F7"
         android:textSize="15sp"
         android:lineSpacingExtra="5dp"
+        android:inputType="textMultiLine|textCapSentences"
+        android:minLines="2"
+        android:maxLines="8"
         android:layout_marginBottom="16dp" />
 
     <!-- Send button -->

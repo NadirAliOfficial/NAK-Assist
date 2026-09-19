@@ -39,31 +39,6 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
 
-        val btnAway = findViewById<Button>(R.id.btnAwayMode)
-        fun updateAwayBtn() {
-            val on = MessageNotificationService.awayMode
-            btnAway.text = if (on) "💤 Away Mode: ON" else "💤 Away Mode: OFF"
-            btnAway.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                if (on) android.graphics.Color.parseColor("#9C27B0")
-                else android.graphics.Color.parseColor("#555555")
-            )
-        }
-
-        // Load persisted state
-        MessageNotificationService.awayMode = PersistenceHelper.loadAwayMode(this)
-        updateAwayBtn()
-
-        btnAway.setOnClickListener {
-            MessageNotificationService.awayMode = !MessageNotificationService.awayMode
-            val on = MessageNotificationService.awayMode
-            PersistenceHelper.saveAwayMode(this, on)
-            FloatingButtonManager.setAwayMode(on)
-            updateAwayBtn()
-            Toast.makeText(this,
-                if (on) "Away Mode ON — auto-replies enabled" else "Away Mode OFF",
-                Toast.LENGTH_SHORT).show()
-        }
-
         // API Keys
         val etKeys = findViewById<EditText>(R.id.etApiKeys)
         etKeys.setText(GroqApiHelper.getSavedKeys(this).replace(",", "\n"))

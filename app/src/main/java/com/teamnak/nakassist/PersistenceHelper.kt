@@ -8,38 +8,16 @@ object PersistenceHelper {
 
     private const val PREFS = "nak_settings"
 
-    // ── Away Mode ─────────────────────────────────────────────────────────
+    // ── Keep Screen Awake ────────────────────────────────────────────────
 
-    fun saveAwayMode(ctx: Context, on: Boolean) {
+    fun saveKeepAwake(ctx: Context, on: Boolean) {
         ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putBoolean("away_mode", on).apply()
+            .edit().putBoolean("keep_awake", on).apply()
     }
 
-    fun loadAwayMode(ctx: Context): Boolean {
+    fun loadKeepAwake(ctx: Context): Boolean {
         return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getBoolean("away_mode", false)
-    }
-
-    // ── Stay Online ───────────────────────────────────────────────────────
-
-    fun saveStayOnline(ctx: Context, on: Boolean) {
-        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putBoolean("stay_online", on).apply()
-    }
-
-    fun loadStayOnline(ctx: Context): Boolean {
-        return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getBoolean("stay_online", false)
-    }
-
-    fun saveStayOnlineInterval(ctx: Context, seconds: Int) {
-        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putInt("stay_online_interval", seconds).apply()
-    }
-
-    fun loadStayOnlineInterval(ctx: Context): Int {
-        return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getInt("stay_online_interval", 21)
+            .getBoolean("keep_awake", false)
     }
 
     // ── Conversation Cache ────────────────────────────────────────────────

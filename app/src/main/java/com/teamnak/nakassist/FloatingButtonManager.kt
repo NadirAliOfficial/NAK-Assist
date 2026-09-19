@@ -15,9 +15,7 @@ object FloatingButtonManager {
     private var windowManager: WindowManager? = null
     private var buttonView: TextView? = null
     private val handler = Handler(Looper.getMainLooper())
-    private var countdownRunnable: Runnable? = null
     private var longPressRunnable: Runnable? = null
-    private var countdownSeconds = 0
     private var unrepliedCount = 0
 
     fun show(context: Context) {
@@ -119,22 +117,10 @@ object FloatingButtonManager {
                 btn.setBackgroundColor(android.graphics.Color.TRANSPARENT)
                 btn.background = android.graphics.drawable.GradientDrawable().apply {
                     shape = android.graphics.drawable.GradientDrawable.OVAL
-                    setColor(android.graphics.Color.parseColor(
-                        if (MessageNotificationService.awayMode) "#DD9C27B0" else "#DD1B5E20"
-                    ))
+                    setColor(android.graphics.Color.parseColor("#DD1B5E20"))
                 }
                 btn.alpha = 0.4f
             }, 1000)
-        }
-    }
-
-    fun setAwayMode(on: Boolean) {
-        handler.post {
-            buttonView?.background = android.graphics.drawable.GradientDrawable().apply {
-                shape = android.graphics.drawable.GradientDrawable.OVAL
-                setColor(android.graphics.Color.parseColor(if (on) "#DD9C27B0" else "#DD1B5E20"))
-            }
-            updateButtonText()
         }
     }
 
@@ -156,31 +142,7 @@ object FloatingButtonManager {
 
     private fun updateButtonText() {
         val btn = buttonView ?: return
-        // Don't override countdown text
-        if (countdownRunnable != null) return
-        val icon = if (MessageNotificationService.awayMode) "💤" else "⚡"
-        btn.text = if (unrepliedCount > 0) "$icon$unrepliedCount" else icon
-    }
-
-    fun startCountdown(intervalSeconds: Int) {
-        stopCountdown()
-        countdownSeconds = intervalSeconds
-        countdownRunnable = object : Runnable {
-            override fun run() {
-                if (countdownSeconds <= 0) {
-                    countdownSeconds = intervalSeconds
-                }
-                buttonView?.text = "$countdownSeconds"
-                countdownSeconds--
-                handler.postDelayed(this, 1000)
-            }
-        }.also { handler.post(it) }
-    }
-
-    fun stopCountdown() {
-        countdownRunnable?.let { handler.removeCallbacks(it) }
-        countdownRunnable = null
-        updateButtonText()
+        btn.text = if (unrepliedCount > 0) "⚡$unrepliedCount" else "⚡"
     }
 
     fun setKeepScreenOn(on: Boolean) {
