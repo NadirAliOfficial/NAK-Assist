@@ -7,6 +7,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -37,3 +40,13 @@ jobs:
         with:
           name: nak-assist-debug-apk
           path: app/build/outputs/apk/debug/*.apk
+
+      - name: Publish debug APK to a Release (direct download link)
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-debug
+          name: "Latest debug build"
+          body: "Auto-published from commit ${{ github.sha }} — always the most recent successful build on main."
+          prerelease: true
+          files: app/build/outputs/apk/debug/*.apk
