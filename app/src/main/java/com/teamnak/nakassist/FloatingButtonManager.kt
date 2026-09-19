@@ -102,6 +102,8 @@ object FloatingButtonManager {
             buttonView = button
             try {
                 windowManager?.addView(button, params)
+                updateButtonText()
+                if (AssistAccessibilityService.keepAwakeEnabled) setKeepScreenOn(true)
             } catch (e: Exception) {
                 android.util.Log.e("NAK", "Failed to add floating button: ${e.message}")
             }

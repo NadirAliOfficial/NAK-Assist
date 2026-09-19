@@ -29,7 +29,10 @@ class AssistAccessibilityService : AccessibilityService() {
         StatsTracker.init(this)
         ConversationCache.init(this)
 
-        FloatingButtonManager.show(this)
+        // Show the button immediately if Fiverr is already the foreground app
+        if (rootInActiveWindow?.packageName?.toString() in FIVERR_PACKAGES) {
+            FloatingButtonManager.show(this)
+        }
 
         if (PersistenceHelper.loadKeepAwake(this)) startKeepAwake()
 
@@ -39,6 +42,14 @@ class AssistAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         val pkg = event.packageName?.toString() ?: return
+
+        // Show the floating button only while Fiverr is the foreground app —
+        // hide it the instant the user switches to anything else.
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            if (pkg in FIVERR_PACKAGES) FloatingButtonManager.show(this)
+            else FloatingButtonManager.dismiss()
+        }
+
         if (pkg !in FIVERR_PACKAGES) return
 
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
