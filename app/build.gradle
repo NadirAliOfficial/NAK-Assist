@@ -3,6 +3,12 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace 'com.teamnak.nakassist'
     compileSdk 34
@@ -15,8 +21,20 @@ android {
         versionName "1.0"
     }
 
+    signingConfigs {
+        release {
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+        }
+    }
+
     buildTypes {
-        release { minifyEnabled false }
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
         debug { archivesBaseName = "NAK-Assist" }
     }
 
