@@ -13,13 +13,12 @@ object GroqApiHelper {
 
     private const val PREFS = "nak_settings"
     private const val KEYS_PREF = "groq_api_keys"
+    private const val MODEL = "openai/gpt-oss-120b"
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS)
         .build()
-
-    private const val MODEL = "llama-3.3-70b-versatile"
 
     private var apiKeys: List<String> = emptyList()
     private var keyIndex = 0
@@ -61,10 +60,9 @@ object GroqApiHelper {
     ) {
         val apiKey = nextKey()
         if (apiKey == null) {
-            onError("No Groq API key set — add one in the NAK Assist app")
+            onError("No Groq API key configured — add one in the app (console.groq.com)")
             return
         }
-
         val body = JSONObject().apply {
             put("model", MODEL)
             put("max_tokens", maxTokens)

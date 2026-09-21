@@ -38,7 +38,8 @@ object ModeSelector {
 
             view.findViewById<android.widget.TextView>(R.id.tvCloseMode).setOnClickListener { dismiss() }
 
-            // Keep Screen Awake toggle
+            // Keep Screen Awake toggle — just prevents the screen from sleeping,
+            // no taps sent anywhere, no interaction with Fiverr at all.
             val btnKeepAwake = view.findViewById<Button>(R.id.btnKeepAwakeToggle)
             fun updateKeepAwakeBtn() {
                 val on = AssistAccessibilityService.keepAwakeEnabled
@@ -52,6 +53,25 @@ object ModeSelector {
                 if (AssistAccessibilityService.keepAwakeEnabled) service.stopKeepAwake()
                 else service.startKeepAwake()
                 updateKeepAwakeBtn()
+            }
+
+            // Away Mode toggle — drafts a reply and notifies Nadir to review & send,
+            // never auto-sends or opens Fiverr itself.
+            val btnAway = view.findViewById<Button>(R.id.btnAwayModeToggle)
+            fun updateAwayBtn() {
+                val on = MessageNotificationService.awayMode
+                btnAway.text = if (on) "💤 Away Mode: ON" else "💤 Away Mode: OFF"
+                btnAway.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                    android.graphics.Color.parseColor(if (on) "#2F5FCC" else "#2C2C2E")
+                )
+            }
+            updateAwayBtn()
+            btnAway.setOnClickListener {
+                MessageNotificationService.awayMode = !MessageNotificationService.awayMode
+                val on = MessageNotificationService.awayMode
+                PersistenceHelper.saveAwayMode(context, on)
+                FloatingButtonManager.setAwayMode(on)
+                updateAwayBtn()
             }
 
             selectorView = view

@@ -24,12 +24,24 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:label="Settings" />
+
+        <activity
+            android:name=".ClientsActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ThreadActivity"
+            android:exported="false"
+            android:label="Conversation" />
 
         <service
             android:name=".AssistAccessibilityService"
@@ -51,6 +63,22 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+
+        <!-- Quick Settings Tile for Away Mode -->
+        <service
+            android:name=".AwayModeTileService"
+            android:exported="true"
+            android:icon="@android:drawable/ic_lock_idle_alarm"
+            android:label="NAK Away Mode"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <receiver
+            android:name=".CopyDraftReceiver"
+            android:exported="false" />
 
         <!-- Daily Stats notification + Boot re-registration -->
         <receiver

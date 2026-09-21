@@ -20,7 +20,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="⚡ NAK Assist"
-            android:textColor="#30D158"
+            android:textColor="#4F8CFF"
             android:textSize="15sp"
             android:textStyle="bold" />
         <TextView
@@ -33,7 +33,15 @@
             android:gravity="center" />
     </LinearLayout>
 
-    <!-- Keep Screen Awake -->
+    <!-- Away Mode -->
+    <Button android:id="@+id/btnAwayModeToggle"
+        android:layout_width="match_parent" android:layout_height="50dp"
+        android:text="💤 Away Mode: OFF"
+        android:backgroundTint="#2C2C2E"
+        android:textColor="#4F8CFF" android:textSize="14sp"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Keep Screen Awake — local only, no interaction with Fiverr -->
     <Button android:id="@+id/btnKeepAwakeToggle"
         android:layout_width="match_parent" android:layout_height="50dp"
         android:text="🔆 Keep Screen Awake: OFF"

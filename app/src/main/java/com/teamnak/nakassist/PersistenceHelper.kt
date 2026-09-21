@@ -20,6 +20,20 @@ object PersistenceHelper {
             .getBoolean("keep_awake", false)
     }
 
+    // ── Away Mode ────────────────────────────────────────────────────────
+    // Draft-only: generates a reply and posts it as a notification for Nadir
+    // to review and send himself. Never auto-sends anything.
+
+    fun saveAwayMode(ctx: Context, on: Boolean) {
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putBoolean("away_mode", on).apply()
+    }
+
+    fun loadAwayMode(ctx: Context): Boolean {
+        return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getBoolean("away_mode", false)
+    }
+
     // ── Conversation Cache ────────────────────────────────────────────────
 
     fun saveConversations(ctx: Context, data: Map<String, List<String>>) {
@@ -45,6 +59,52 @@ object PersistenceHelper {
                 for (i in 0 until arr.length()) msgs.add(arr.getString(i))
                 result[buyer] = msgs
             }
+            result
+        } catch (_: Exception) { emptyMap() }
+    }
+
+    fun saveDisplayNames(ctx: Context, data: Map<String, String>) {
+        val root = JSONObject()
+        data.forEach { (key, name) -> root.put(key, name) }
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putString("display_names", root.toString()).apply()
+    }
+
+    fun loadDisplayNames(ctx: Context): Map<String, String> {
+        val raw = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString("display_names", null) ?: return emptyMap()
+        return try {
+            val root = JSONObject(raw)
+            val result = mutableMapOf<String, String>()
+            root.keys().forEach { key -> result[key] = root.getString(key) }
+            result
+        } catch (_: Exception) { emptyMap() }
+    }
+
+    fun saveUnread(ctx: Context, keys: Set<String>) {
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putStringSet("unread_buyers", keys).apply()
+    }
+
+    fun loadUnread(ctx: Context): Set<String> {
+        return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getStringSet("unread_buyers", emptySet()) ?: emptySet()
+    }
+
+    fun saveDrafts(ctx: Context, data: Map<String, String>) {
+        val root = JSONObject()
+        data.forEach { (key, draft) -> root.put(key, draft) }
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putString("drafts", root.toString()).apply()
+    }
+
+    fun loadDrafts(ctx: Context): Map<String, String> {
+        val raw = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString("drafts", null) ?: return emptyMap()
+        return try {
+            val root = JSONObject(raw)
+            val result = mutableMapOf<String, String>()
+            root.keys().forEach { key -> result[key] = root.getString(key) }
             result
         } catch (_: Exception) { emptyMap() }
     }
