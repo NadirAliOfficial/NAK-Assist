@@ -16,6 +16,17 @@
         android:textColor="?attr/colorPrimary"
         android:text="Client" />
 
+    <TextView
+        android:id="@+id/tvExpiryNote"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:layout_marginTop="-12dp"
+        android:textSize="12sp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:text="" />
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"

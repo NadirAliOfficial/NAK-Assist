@@ -20,7 +20,7 @@ import com.google.android.material.button.MaterialButton
  * Lists every Fiverr client with a saved conversation (captured passively from
  * notifications — nothing here reads or sends anything on Fiverr's behalf).
  * Tap a client to see the full thread, or hit Copy right on the row to grab
- * everything for that client without opening it.
+ * everything for that client without opening it. Messages auto-delete after 24h.
  */
 class ClientsActivity : AppCompatActivity() {
 
@@ -92,6 +92,22 @@ class ClientsActivity : AppCompatActivity() {
         render()
     }
 
+    /** e.g. "2h ago · auto-deletes in 22h" */
+    private fun metaText(key: String): String {
+        val now = System.currentTimeMillis()
+        val parts = mutableListOf<String>()
+        ConversationCache.lastActivityTime(key)?.let {
+            parts += android.text.format.DateUtils.getRelativeTimeSpanString(
+                it, now, android.text.format.DateUtils.MINUTE_IN_MILLIS
+            ).toString()
+        }
+        ConversationCache.nextExpiryTime(key)?.let {
+            val hoursLeft = ((it - now) / (60 * 60 * 1000)).coerceAtLeast(0)
+            parts += if (hoursLeft >= 1) "auto-deletes in ${hoursLeft}h" else "auto-deletes soon"
+        }
+        return parts.joinToString(" · ")
+    }
+
     private fun buildRow(key: String, density: Float): View {
         val unread = ConversationCache.isUnread(key)
 
@@ -143,6 +159,22 @@ class ClientsActivity : AppCompatActivity() {
             nameRow.addView(badge)
         }
 
+        if (LeadDetector.isHotLead(ConversationCache.clientMessages(key))) {
+            nameRow.addView(TextView(this).apply {
+                text = " 🔥 LEAD "
+                textSize = 11f
+                setTextColor(android.graphics.Color.WHITE)
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    cornerRadius = 8 * density
+                    setColor(android.graphics.Color.parseColor("#E8590C"))
+                }
+                setPadding((6 * density).toInt(), (2 * density).toInt(), (6 * density).toInt(), (2 * density).toInt())
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { marginStart = (6 * density).toInt() }
+            })
+        }
+
         val previewText = ConversationCache.lastMessagePreview(key)
         val preview = TextView(this).apply {
             text = previewText.ifBlank { "No new messages" }
@@ -153,8 +185,16 @@ class ClientsActivity : AppCompatActivity() {
             setPadding(0, (4 * density).toInt(), 0, 0)
         }
 
+        val meta = TextView(this).apply {
+            text = metaText(key)
+            textSize = 11f
+            setTextColor(android.graphics.Color.parseColor("#666666"))
+            setPadding(0, (2 * density).toInt(), 0, 0)
+        }
+
         textColumn.addView(nameRow)
         textColumn.addView(preview)
+        textColumn.addView(meta)
 
         val copyButton = MaterialButton(this).apply {
             text = "Copy"

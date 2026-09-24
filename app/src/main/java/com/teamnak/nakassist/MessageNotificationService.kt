@@ -20,7 +20,8 @@ class MessageNotificationService : NotificationListenerService() {
     companion object {
         var awayMode = false
         private val FIVERR_PACKAGES = setOf("com.fiverr.fiverr", "com.fiverr.android")
-        private var lastDraftTime = 0L
+        // Per client, so two clients messaging within seconds both get a draft.
+        private val lastDraftTime = mutableMapOf<String, Long>()
         private const val DRAFT_COOLDOWN_MS = 8_000L
     }
 
@@ -38,12 +39,15 @@ class MessageNotificationService : NotificationListenerService() {
 
         val extras = sbn.notification.extras
         val title = extras.getString("android.title") ?: ""
-        val text = extractFullText(extras)
-        if (text.isBlank()) return
 
-        // Track stats & cache conversation
+        // Only react to genuinely new messages — Fiverr re-posts notifications and stacks
+        // earlier lines into later ones, which used to duplicate the thread, re-bump the
+        // unread badge and burn an AI draft each time.
+        val newParts = extractMessages(extras).filter { ConversationCache.addMessage(title, it) }
+        if (newParts.isEmpty()) return
+        val text = newParts.joinToString("\n")
+
         StatsTracker.recordMessage()
-        ConversationCache.addMessage(title, text)
 
         // Increment unreplied badge
         FloatingButtonManager.incrementUnreplied()
@@ -57,8 +61,9 @@ class MessageNotificationService : NotificationListenerService() {
 
         if (awayMode) {
             val now = System.currentTimeMillis()
-            if (now - lastDraftTime >= DRAFT_COOLDOWN_MS) {
-                lastDraftTime = now
+            val key = title.trim().lowercase()
+            if (now - (lastDraftTime[key] ?: 0L) >= DRAFT_COOLDOWN_MS) {
+                lastDraftTime[key] = now
                 generateDraftAndNotify(title, text)
             }
         }
@@ -71,16 +76,18 @@ class MessageNotificationService : NotificationListenerService() {
      * messages. Prefer the untruncated versions Android/Fiverr also attach:
      * "android.textLines" (multiple stacked messages, e.g. two arrived close together)
      * and "android.bigText" (the full expanded single message), falling back to the
-     * short preview only if neither is present.
+     * short preview only if neither is present. Stacked lines are returned separately so
+     * already-captured ones can be skipped.
      */
-    private fun extractFullText(extras: android.os.Bundle): String {
+    private fun extractMessages(extras: android.os.Bundle): List<String> {
         val lines = extras.getCharSequenceArray("android.textLines")
         if (lines != null && lines.isNotEmpty()) {
-            return lines.joinToString("\n") { it.toString() }
+            return lines.map { it.toString() }.filter { it.isNotBlank() }
         }
         val bigText = extras.getCharSequence("android.bigText")?.toString()
-        if (!bigText.isNullOrBlank()) return bigText
-        return extras.getCharSequence("android.text")?.toString() ?: ""
+        if (!bigText.isNullOrBlank()) return listOf(bigText)
+        val text = extras.getCharSequence("android.text")?.toString()
+        return if (text.isNullOrBlank()) emptyList() else listOf(text)
     }
 
     /** Away Mode: draft a reply and notify Nadir to review & send — never sends anything itself. */

@@ -24,10 +24,15 @@ class ThreadActivity : AppCompatActivity() {
         val key = intent.getStringExtra(EXTRA_BUYER_KEY) ?: run { finish(); return }
         val displayName = ConversationCache.displayNameFor(key)
         val thread = ConversationCache.threadFor(key)
+        val timeFormat = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
+        val timedThread = ConversationCache.entriesFor(key)
+            .joinToString("\n") { "[${timeFormat.format(java.util.Date(it.time))}] ${it.text}" }
 
         findViewById<TextView>(R.id.tvClientName).text = displayName
         findViewById<TextView>(R.id.tvThread).text =
-            if (thread.isBlank()) "No messages yet." else thread
+            if (timedThread.isBlank()) "No messages yet." else timedThread
+        findViewById<TextView>(R.id.tvExpiryNote).text =
+            "Messages auto-delete 24h after they arrive."
 
         ConversationCache.markRead(key)
 

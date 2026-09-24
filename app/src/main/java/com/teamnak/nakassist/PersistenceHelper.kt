@@ -36,31 +36,43 @@ object PersistenceHelper {
 
     // ── Conversation Cache ────────────────────────────────────────────────
 
-    fun saveConversations(ctx: Context, data: Map<String, List<String>>) {
+    // Messages are stored as {"t": epochMillis, "m": text} so they can auto-delete after 24h.
+    // Older builds stored bare strings; those are stamped with `now` on load, so they get a
+    // full 24h after the update instead of vanishing instantly.
+
+    fun saveConversations(ctx: Context, data: Map<String, List<ConversationCache.Message>>) {
         val root = JSONObject()
         data.forEach { (buyer, messages) ->
             val arr = JSONArray()
-            messages.forEach { arr.put(it) }
+            messages.forEach { arr.put(messageToJson(it)) }
             root.put(buyer, arr)
         }
         ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit().putString("conversations", root.toString()).apply()
     }
 
-    fun loadConversations(ctx: Context): Map<String, MutableList<String>> {
+    fun loadConversations(ctx: Context, now: Long): Map<String, MutableList<ConversationCache.Message>> {
         val raw = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getString("conversations", null) ?: return emptyMap()
         return try {
             val root = JSONObject(raw)
-            val result = mutableMapOf<String, MutableList<String>>()
+            val result = mutableMapOf<String, MutableList<ConversationCache.Message>>()
             root.keys().forEach { buyer ->
                 val arr = root.getJSONArray(buyer)
-                val msgs = mutableListOf<String>()
-                for (i in 0 until arr.length()) msgs.add(arr.getString(i))
+                val msgs = mutableListOf<ConversationCache.Message>()
+                for (i in 0 until arr.length()) jsonToMessage(arr.get(i), now)?.let { msgs.add(it) }
                 result[buyer] = msgs
             }
             result
         } catch (_: Exception) { emptyMap() }
+    }
+
+    private fun messageToJson(e: ConversationCache.Message) = JSONObject().put("t", e.time).put("m", e.text)
+
+    private fun jsonToMessage(v: Any?, now: Long): ConversationCache.Message? = when (v) {
+        is JSONObject -> ConversationCache.Message(v.optLong("t", now), v.optString("m"))
+        is String -> ConversationCache.Message(now, v)
+        else -> null
     }
 
     fun saveDisplayNames(ctx: Context, data: Map<String, String>) {
@@ -91,20 +103,38 @@ object PersistenceHelper {
             .getStringSet("unread_buyers", emptySet()) ?: emptySet()
     }
 
-    fun saveDrafts(ctx: Context, data: Map<String, String>) {
+    fun saveDrafts(ctx: Context, data: Map<String, ConversationCache.Message>) {
         val root = JSONObject()
-        data.forEach { (key, draft) -> root.put(key, draft) }
+        data.forEach { (key, draft) -> root.put(key, messageToJson(draft)) }
         ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit().putString("drafts", root.toString()).apply()
     }
 
-    fun loadDrafts(ctx: Context): Map<String, String> {
+    fun loadDrafts(ctx: Context, now: Long): Map<String, ConversationCache.Message> {
         val raw = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getString("drafts", null) ?: return emptyMap()
         return try {
             val root = JSONObject(raw)
-            val result = mutableMapOf<String, String>()
-            root.keys().forEach { key -> result[key] = root.getString(key) }
+            val result = mutableMapOf<String, ConversationCache.Message>()
+            root.keys().forEach { key -> jsonToMessage(root.get(key), now)?.let { result[key] = it } }
+            result
+        } catch (_: Exception) { emptyMap() }
+    }
+
+    fun saveSeen(ctx: Context, data: Map<String, Long>) {
+        val root = JSONObject()
+        data.forEach { (fingerprint, time) -> root.put(fingerprint, time) }
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putString("seen_messages", root.toString()).apply()
+    }
+
+    fun loadSeen(ctx: Context): Map<String, Long> {
+        val raw = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString("seen_messages", null) ?: return emptyMap()
+        return try {
+            val root = JSONObject(raw)
+            val result = mutableMapOf<String, Long>()
+            root.keys().forEach { key -> result[key] = root.getLong(key) }
             result
         } catch (_: Exception) { emptyMap() }
     }
