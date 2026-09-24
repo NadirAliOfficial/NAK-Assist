@@ -21,19 +21,22 @@ android {
         versionName "1.0"
     }
 
+    // keystore.properties is local-only (not in git); CI builds debug APKs without it.
     signingConfigs {
-        release {
-            storeFile file(keystoreProperties['storeFile'])
-            storePassword keystoreProperties['storePassword']
-            keyAlias keystoreProperties['keyAlias']
-            keyPassword keystoreProperties['keyPassword']
+        if (keystorePropertiesFile.exists()) {
+            release {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
         }
     }
 
     buildTypes {
         release {
             minifyEnabled false
-            signingConfig signingConfigs.release
+            if (keystorePropertiesFile.exists()) signingConfig signingConfigs.release
         }
         debug { archivesBaseName = "NAK-Assist" }
     }

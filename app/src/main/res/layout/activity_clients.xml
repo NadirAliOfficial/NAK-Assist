@@ -43,7 +43,7 @@
             android:layout_height="wrap_content"
             android:padding="24dp"
             android:gravity="center"
-            android:text="No client messages yet.\nSend a test message on Fiverr, or wait for a client to write in."
+            android:text="No client messages yet.\nSend a test message on Fiverr, or wait for a client to write in.\nMessages auto-delete after 24h."
             android:textColor="?attr/colorOnSurfaceVariant"
             android:visibility="gone" />
 
