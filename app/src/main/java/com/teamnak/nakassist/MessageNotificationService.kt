@@ -3,7 +3,11 @@ package com.teamnak.nakassist
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.TaskStackBuilder
+import android.content.ContentResolver
 import android.content.Intent
+import android.media.AudioAttributes
+import android.net.Uri
 import android.os.Build
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
@@ -149,6 +153,7 @@ class MessageNotificationService : NotificationListenerService() {
             .setContentText(draft)
             .setStyle(NotificationCompat.BigTextStyle().bigText(draft))
             .addAction(0, "Copy reply", copyPending)
+            .setContentIntent(openThreadIntent(buyerName))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .build()
@@ -156,13 +161,41 @@ class MessageNotificationService : NotificationListenerService() {
         manager.notify(("draft_$buyerName").hashCode(), notification)
     }
 
+    /** Tapping a notification opens that client's thread, with the client list behind it on Back. */
+    private fun openThreadIntent(buyerName: String): PendingIntent? {
+        val threadIntent = Intent(this, ThreadActivity::class.java)
+            .putExtra(ThreadActivity.EXTRA_BUYER_KEY, buyerName.trim().lowercase())
+        return TaskStackBuilder.create(this)
+            .addNextIntent(Intent(this, ClientsActivity::class.java))
+            .addNextIntent(threadIntent)
+            .getPendingIntent(
+                ("open_$buyerName").hashCode(),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+    }
+
     private fun showSystemNotification(title: String, text: String) {
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        val channelId = "nak_assist_messages"
+        // New channel id: a channel's sound can't be changed once created, so the custom
+        // Fiverr chime needs a fresh channel. The old silent-default one is removed.
+        val channelId = "nak_fiverr_chime"
+        val chime = Uri.parse("${ContentResolver.SCHEME_ANDROID_RESOURCE}://$packageName/${R.raw.fiverr_chime}")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            manager.deleteNotificationChannel("nak_assist_messages")
             manager.createNotificationChannel(
-                NotificationChannel(channelId, "NAK Assist Messages", NotificationManager.IMPORTANCE_HIGH)
+                NotificationChannel(channelId, "Fiverr Messages", NotificationManager.IMPORTANCE_HIGH).apply {
+                    description = "New Fiverr client messages — plays the NAK Fiverr chime"
+                    setSound(
+                        chime,
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build()
+                    )
+                    enableVibration(true)
+                    vibrationPattern = longArrayOf(0, 120, 80, 220)
+                }
             )
         }
 
@@ -170,6 +203,9 @@ class MessageNotificationService : NotificationListenerService() {
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("⚡ Fiverr — $title")
             .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setContentIntent(openThreadIntent(title))
+            .setSound(chime)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setGroup("nak_fiverr_messages")
